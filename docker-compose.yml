@@ -1,0 +1,41 @@
+services:
+  notifier_db:
+    image: postgres:17
+    platform: linux/amd64
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: notifier_prod_db
+  notifier_redis:
+    image: redis:7-alpine
+    platform: linux/amd64
+    ports: 
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  notifier:
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      # - .:/app # line is commented out to avoid mounting the current directory and avoiding replacement of the built main file
+      - postgres_data:/var/lib/postgresql/data
+      - redis_data:/data
+    environment:
+      ENV: production
+    depends_on:
+      - notifier_db
+      - notifier_redis
+
+volumes:
+  postgres_data:
+  redis_data:
+

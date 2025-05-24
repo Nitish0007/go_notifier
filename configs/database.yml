@@ -1,0 +1,17 @@
+development:
+  adapter: postgresql
+  encoding: unicode
+  username: postgres
+  database: notifier_dev_db
+  host: notifier_db
+  port: 5432
+  password: 12345678
+
+production:
+  adapter: postgresql
+  encoding: unicode
+  username: postgres
+  database: notifier_prod_db
+  host: notifier_db
+  port: 5432
+  password: 12345678
