@@ -25,12 +25,8 @@ func NewAccountService() *AccountService {
 	}
 }
 
-func (s *AccountService) CreateAccount(ctx context.Context) (*models.Account, error) {
-	account, err := initializeAccount(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+// PUBLIC METHODS with receiver
+func (s *AccountService) CreateAccount(ctx context.Context, account *models.Account) (*models.Account, error) {
 	if err := validateAccount(account); err != nil {
 		return nil, err
 	}
@@ -58,6 +54,7 @@ func (s *AccountService) CreateAccount(ctx context.Context) (*models.Account, er
 		return nil, err
 	}
 
+	// NOTE: TODO for multi-tenancy support
 	// Can be created a new DB tenant with name 'account_${account.ID}' if one account has huge amount of data
 	// Tenancy scheme can be implemented here: single database schema-based multi-tenancy
 	// migration needs to be handled separately for each tenant
@@ -69,32 +66,24 @@ func (s *AccountService) CreateAccount(ctx context.Context) (*models.Account, er
 	return account, nil
 }
 
-func validateAccount(account *models.Account) error {
-	if account.FirstName == "" || account.Email == "" || account.EncryptedPassword == "" {
-		return errors.New("invalid account parameters: first name, email, and encrypted password are required")
-	}
-	return nil
-}
-
-func initializeAccount(ctx context.Context) (*models.Account, error) {
+func (s *AccountService) InitializeAccount(ctx context.Context, accountData map[string]any) (*models.Account, error) {
 	account := &models.Account{}
 
-	if payload, ok := ctx.Value("account").(map[string]interface{}); ok {
-
-		if firstName, ok := payload["first_name"].(string); ok {
+	if accountData != nil {
+		if firstName, ok := accountData["first_name"].(string); ok {
 			account.FirstName = firstName
 		}
 
-		if lastName, ok := payload["last_name"].(string); ok {
+		if lastName, ok := accountData["last_name"].(string); ok {
 			account.LastName = lastName
 		}
 
-		if email, ok := payload["email"].(string); ok {
+		if email, ok := accountData["email"].(string); ok {
 			account.Email = email
 		}
 
-		password, ok := payload["password"].(string)
-		confirmPass, ok2 := payload["confirm_password"].(string)
+		password, ok := accountData["password"].(string)
+		confirmPass, ok2 := accountData["confirm_password"].(string)
 
 		if !ok || !ok2 || password == "" || confirmPass == "" {
 			return nil, errors.New("password and confirm password are required")
@@ -109,7 +98,7 @@ func initializeAccount(ctx context.Context) (*models.Account, error) {
 		}
 		account.EncryptedPassword = string(encryptedPass)
 
-		isActive, ok := payload["is_active"].(bool)
+		isActive, ok := accountData["is_active"].(bool)
 		if !ok {
 			account.IsActive = true // default to true if not provided
 		} else {
@@ -123,4 +112,12 @@ func initializeAccount(ctx context.Context) (*models.Account, error) {
 	}
 
 	return nil, errors.New("account data not provided")
+}
+
+// PRIVATE METHODS without receiver 
+func validateAccount(account *models.Account) error {
+	if account.FirstName == "" || account.Email == "" || account.EncryptedPassword == "" {
+		return errors.New("invalid account parameters: first name, email, and encrypted password are required")
+	}
+	return nil
 }
