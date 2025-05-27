@@ -23,6 +23,22 @@ services:
     volumes:
       - redis_data:/data
 
+  notifier_migrate: # its a one-time run container, and should be exited with code 0 for successful executions of migrations
+    image: migrate/migrate # official image provided by golang-migrate maintainers
+    volumes:
+      - ./db/migrations:/migrations
+    environment:
+      DATABASE_URL: postgres://postgres:12345678@notifier_db:5432/notifier_dev_db?sslmode=disable
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "postgres://postgres:12345678@notifier_db:5432/notifier_dev_db?sslmode=disable",
+        "up"
+      ]
+    depends_on:
+      notifier_db:
+        condition: service_healthy
+
   notifier:
     platform: linux/amd64
     build:
