@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"github.com/Nitish0007/go_notifier/internal/models"
-	"github.com/Nitish0007/go_notifier/utils"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -12,9 +11,9 @@ type AccountRepository struct {
 	DB *pgx.Conn
 }
 
-func NewAccountRepository() *AccountRepository {
+func NewAccountRepository(conn *pgx.Conn) *AccountRepository {
 	return &AccountRepository{
-		DB: utils.DB,
+		DB: conn,
 	}
 }
 

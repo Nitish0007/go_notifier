@@ -9,8 +9,7 @@ import (
 	"github.com/go-chi/cors"
 )
 
-var R *chi.Mux
-
+// initializing and returning router with basic middlewares and configurations
 func InitRouter() *chi.Mux {
 	router := chi.NewRouter()
 
@@ -31,6 +30,5 @@ func InitRouter() *chi.Mux {
 		panic("Simulated panic for testing purpose")
 	})
 
-	R = router
-	return R
+	return router
 }

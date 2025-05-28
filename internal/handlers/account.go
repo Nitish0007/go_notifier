@@ -7,36 +7,44 @@ import (
 	"github.com/Nitish0007/go_notifier/internal/services"
 )
 
-var accountService = services.NewAccountService()
+type AccountHandler struct {
+	accountService *services.AccountService
+}
 
-func CreateAccountHandler(w http.ResponseWriter, r *http.Request) {
+func NewAccountHandler(s *services.AccountService) *AccountHandler {
+	return &AccountHandler{
+		accountService: s,
+	}
+}
+
+func (h *AccountHandler) CreateAccountHandler(w http.ResponseWriter, r *http.Request) {
 	payload, err := utils.ParseJSONBody(r)
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	accountData, exists := payload["account"].(map[string]any)
 	if !exists || len(accountData) == 0 {
-		http.Error(w, "Invalid account data", http.StatusBadRequest)
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Account data is required")
 		return
 	}
 
 	// Initialize account with the provided data
 	ctx := r.Context()
-	account, err := accountService.InitializeAccount(ctx, accountData)
+	account, err := h.accountService.InitializeAccount(ctx, accountData)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	// account creation and related operations handled here
-	account, err = accountService.CreateAccount(ctx, account)
+	account, err = h.accountService.CreateAccount(ctx, account)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	utils.WriteJSONResponse(w, http.StatusCreated, account)
+	utils.WriteJSONResponse(w, http.StatusCreated, account, "Account created successfully")
 }

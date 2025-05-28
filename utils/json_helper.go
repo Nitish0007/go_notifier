@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"log"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -22,16 +23,36 @@ func ParseJSONBody(r *http.Request) (map[string]any, error) {
 	return payload, nil
 }
 
-func WriteJSONResponse(w http.ResponseWriter, status int, data any) error {
+func WriteJSONResponse(w http.ResponseWriter, status int, data any, message string) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
-	if data == nil {
+	response := make(map[string]any)
+	if message != "" {
+		response["message"] = message
+	}
+
+	if data != nil {
+		response["data"] = data
+	}
+
+	if(len(response) == 0){
 		return nil
 	}
 
 	if err := json.NewEncoder(w).Encode(data); err != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+		log.Fatal("Unable to encode JSON")
+		return err
+	}
+	return nil
+}
+
+func WriteErrorResponse(w http.ResponseWriter, status int, message string) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+
+	errorResponse := map[string]string{"error": message}
+	if err := json.NewEncoder(w).Encode(errorResponse); err != nil {
 		return err
 	}
 	return nil
