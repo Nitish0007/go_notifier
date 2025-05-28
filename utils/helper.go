@@ -2,6 +2,7 @@ package utils
 
 import (
 	"math/rand"
+	"regexp"
 	"time"
 )
 
@@ -14,4 +15,10 @@ func GenerateAlphaNumericKey() string {
 		key[i] = charset[r.Intn(len(charset))]
 	}
 	return string(key)
+}
+
+func ValidateEmail(email string) bool {
+	const emailRegex = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`
+	matched, _ := regexp.MatchString(emailRegex, email)
+	return matched
 }

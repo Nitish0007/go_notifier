@@ -23,7 +23,6 @@ type envConfig struct {
 	Development dbConfig `yaml:"development"`
 }
 
-var DB *pgx.Conn
 var dbConf dbConfig
 
 // Public methods below
@@ -41,8 +40,7 @@ func ConnectDB() (*pgx.Conn, error) {
 		return nil, err
 	}
 	log.Println("Connected to database successfully")
-	DB = conn
-	return DB, nil
+	return conn, nil
 }
 
 // Private methods below

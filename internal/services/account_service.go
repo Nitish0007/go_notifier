@@ -8,8 +8,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/Nitish0007/go_notifier/internal/models"
 	"github.com/Nitish0007/go_notifier/utils"
+	"github.com/Nitish0007/go_notifier/internal/models"
 	"github.com/Nitish0007/go_notifier/internal/repositories"
 )
 
@@ -18,10 +18,10 @@ type AccountService struct {
 	ApiKeyRepo *repositories.ApiKeyRepository
 }
 
-func NewAccountService() *AccountService {
+func NewAccountService(accRepo *repositories.AccountRepository, apiKeyRepo *repositories.ApiKeyRepository) *AccountService {
 	return &AccountService{
-		AccRepo: repositories.NewAccountRepository(),
-		ApiKeyRepo: repositories.NewApiKeyRepository(),
+		AccRepo: accRepo,
+		ApiKeyRepo: apiKeyRepo,
 	}
 }
 
@@ -79,6 +79,9 @@ func (s *AccountService) InitializeAccount(ctx context.Context, accountData map[
 		}
 
 		if email, ok := accountData["email"].(string); ok {
+			if !utils.ValidateEmail(email) {
+				return nil, errors.New("invalid email format")
+			}
 			account.Email = email
 		}
 
@@ -86,12 +89,15 @@ func (s *AccountService) InitializeAccount(ctx context.Context, accountData map[
 		confirmPass, ok2 := accountData["confirm_password"].(string)
 
 		if !ok || !ok2 || password == "" || confirmPass == "" {
-			return nil, errors.New("password and confirm password are required")
+			return nil, errors.New("password and confirm password")
 		}
 		if password != confirmPass {
 			return nil, errors.New("password and confirm password do not match")
 		}
 
+		if len(password) < 6 {
+			return nil, errors.New("password must be at least 6 characters long")
+		}
 		encryptedPass, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
 			return nil, errors.New("failed to encrypt password")

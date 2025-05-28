@@ -1,15 +1,19 @@
 package main
 
 import (
+	"log"
 	"net/http"
+
 	"github.com/Nitish0007/go_notifier/utils"
-	"github.com/Nitish0007/go_notifier/internal/routes"
+	"github.com/Nitish0007/go_notifier/initializer"
 )
 
 func main(){
-	utils.ConnectDB()
+	log.SetFlags(log.LstdFlags | log.Llongfile) // configuring logger to print filename and line number
+
+	conn, _ := utils.ConnectDB()
 	r := utils.InitRouter()
-	routes.InitializeRoutes(r)
+	initializer.InititalizeApplication(conn, r)
 
 	http.ListenAndServe(":8080", r)
 }

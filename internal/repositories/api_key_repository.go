@@ -5,7 +5,6 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Nitish0007/go_notifier/internal/models"
-	"github.com/Nitish0007/go_notifier/utils"
 )
 
 
@@ -13,9 +12,9 @@ type ApiKeyRepository struct {
 	DB *pgx.Conn
 }
 
-func NewApiKeyRepository() *ApiKeyRepository{
+func NewApiKeyRepository(conn *pgx.Conn) *ApiKeyRepository{
 	return &ApiKeyRepository{
-		DB: utils.DB,
+		DB: conn,
 	}
 }
 
