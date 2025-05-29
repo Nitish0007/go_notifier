@@ -17,6 +17,7 @@ func NewAccountHandler(s *services.AccountService) *AccountHandler {
 	}
 }
 
+// for signup
 func (h *AccountHandler) CreateAccountHandler(w http.ResponseWriter, r *http.Request) {
 	payload, err := utils.ParseJSONBody(r)
 
@@ -42,9 +43,36 @@ func (h *AccountHandler) CreateAccountHandler(w http.ResponseWriter, r *http.Req
 	// account creation and related operations handled here
 	account, err = h.accountService.CreateAccount(ctx, account)
 	if err != nil {
-		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
 
 	utils.WriteJSONResponse(w, http.StatusCreated, account, "Account created successfully")
+}
+
+// for login
+func (h *AccountHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
+	payload, err := utils.ParseJSONBody(r)
+
+	if err != nil{
+		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	loginData, exists := payload["login"].(map[string]string)
+	if(!exists || len(loginData) == 0){
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Credentials not provided")
+		return
+	}
+
+	ctx := r.Context()
+	data, err := h.accountService.Login(ctx, loginData)
+
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+
+	utils.WriteJSONResponse(w, http.StatusAccepted, data, "Logged in successfully")
+
 }
