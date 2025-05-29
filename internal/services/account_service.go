@@ -1,9 +1,10 @@
 package services
 
 import (
-	"context"
-	"errors"
 	"time"
+	"errors"
+	"context"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -79,6 +80,7 @@ func (s *AccountService) InitializeAccount(ctx context.Context, accountData map[
 		}
 
 		if email, ok := accountData["email"].(string); ok {
+			email = strings.ToLower(email)
 			if !utils.ValidateEmail(email) {
 				return nil, errors.New("invalid email format")
 			}
@@ -118,6 +120,38 @@ func (s *AccountService) InitializeAccount(ctx context.Context, accountData map[
 	}
 
 	return nil, errors.New("account data not provided")
+}
+
+func (s * AccountService) Login(ctx context.Context, payload map[string]string) (string, error) {
+	// validating payload
+	email, exists := payload["email"]
+	if !exists || email == "" {
+		return "", errors.New("email not provided")
+	}
+	email = strings.ToLower(email)
+
+	if !utils.ValidateEmail(email) {
+		return "", errors.New("invalid email format")
+	}
+
+	// find by email
+	account, err := s.AccRepo.FindAccountByEmail(ctx, email)
+	if err != nil {
+		return "", err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(account.EncryptedPassword), []byte(payload["password"]))
+	if err != nil {
+		return "", err
+	}
+
+	apiKey, err := s.ApiKeyRepo.FindByAccountID(ctx, account.ID)
+
+	if err != nil {
+		return "", err
+	}
+
+	return apiKey.Key, nil
 }
 
 // PRIVATE METHODS without receiver 

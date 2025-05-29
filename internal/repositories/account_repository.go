@@ -35,3 +35,13 @@ func (r *AccountRepository) CreateTx(ctx context.Context, account *models.Accoun
 	}
 	return nil
 }
+
+func (r *AccountRepository) FindAccountByEmail(ctx context.Context, email string) (*models.Account, error) {
+	query := `SELECT * FROM accounts WHERE email LIKE $1`
+	account := models.Account{}
+	err := r.DB.QueryRow(ctx, query, email).Scan(&account)
+	if(err != nil){
+		return nil, err
+	}
+	return &account, nil
+}
