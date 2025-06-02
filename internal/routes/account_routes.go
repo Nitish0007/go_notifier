@@ -12,12 +12,14 @@ func RegisterAccountRoutes(r *chi.Mux, h *handlers.AccountHandler){
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Post("/signup", h.CreateAccountHandler)
 		r.Get("/login", h.LoginHandler)
+
+		// protected routes
+		r.Group(func(protectedRouter chi.Router){
+			protectedRouter.Use(middlewares.AuthenticateRequest)
+
+			// Now simply we can add routes that needs to be authenticated
+		})
 	})
 
-	r.Route("/api/v1", func(r chi.Router) {
-		r.Use(middlewares.AuthenticateRequest)
-
-		// r.Get("/accounts", h.GetAccountsHandler)
-	})
 
 }
