@@ -1,17 +1,20 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 
-	"github.com/Nitish0007/go_notifier/utils"
 	"github.com/Nitish0007/go_notifier/initializer"
+	"github.com/Nitish0007/go_notifier/utils"
 )
 
 func main(){
 	log.SetFlags(log.LstdFlags | log.Llongfile) // configuring logger to print filename and line number
 
 	conn, _ := utils.ConnectDB()
+	defer conn.Close(context.Background())
+	
 	r := utils.InitRouter()
 	initializer.InititalizeApplication(conn, r)
 

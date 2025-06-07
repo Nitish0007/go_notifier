@@ -31,7 +31,7 @@ func WriteJSONResponse(w http.ResponseWriter, status int, data any, message stri
 	if message != "" {
 		response["message"] = message
 	}
-
+	
 	if data != nil {
 		response["data"] = data
 	}
@@ -40,7 +40,7 @@ func WriteJSONResponse(w http.ResponseWriter, status int, data any, message stri
 		return nil
 	}
 
-	if err := json.NewEncoder(w).Encode(data); err != nil {
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		log.Fatal("Unable to encode JSON")
 		return err
 	}

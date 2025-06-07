@@ -20,3 +20,12 @@ echo "Done, now you can run migrations again"
 #   -path=/migrations \
 #   -database "postgres://postgres:12345678@notifier_db:5432/notifier_dev_db?sslmode=disable" \
 #   force 2
+
+# TO ROLLBACK LAST SUCCESSFULL MIGRATION
+# docker run --rm \
+#   --network go_notifier_default \
+#   -v $(pwd)/db/migrations:/migrations \
+#   migrate/migrate \
+#   -path=/migrations \
+#   -database "postgres://postgres:12345678@notifier_db:5432/notifier_dev_db?sslmode=disable" \
+#   down 1

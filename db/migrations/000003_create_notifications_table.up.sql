@@ -1,11 +1,12 @@
 CREATE TABLE notifications (
   id UUID DEFAULT gen_random_uuid(),
   account_id INT NOT NULL,
-  channel INTEGER NOT NULL CHECK (channel IN (1, 2, 3)), -- e.g., 1=email, 2=sms, 3=in_app
+  channel INTEGER NOT NULL CHECK (channel IN (0, 1, 2)), -- e.g., 0=email, 1=sms, 2=in_app
   recipient VARCHAR(255) NOT NULL,
   subject VARCHAR(500),
   content TEXT NOT NULL,
   job_id UUID,
+  metadata JSONB DEFAULT '{}'::JSONB,
 
   status INTEGER NOT NULL DEFAULT 0 CHECK (status IN (0, 1, 2, 3)), -- [0 - pending, 1 - enqueued, 2 - sent, 3 - failed]
   sent_at TIMESTAMP, -- delivered time
