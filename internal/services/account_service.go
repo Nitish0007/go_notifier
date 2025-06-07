@@ -1,17 +1,17 @@
 package services
 
 import (
-	"time"
-	"errors"
 	"context"
+	"errors"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/Nitish0007/go_notifier/utils"
 	"github.com/Nitish0007/go_notifier/internal/models"
 	"github.com/Nitish0007/go_notifier/internal/repositories"
+	"github.com/Nitish0007/go_notifier/utils"
 )
 
 type AccountService struct {
@@ -122,9 +122,9 @@ func (s *AccountService) InitializeAccount(ctx context.Context, accountData map[
 	return nil, errors.New("account data not provided")
 }
 
-func (s * AccountService) Login(ctx context.Context, payload map[string]string) (string, error) {
+func (s * AccountService) Login(ctx context.Context, payload map[string]any) (string, error) {
 	// validating payload
-	email, exists := payload["email"]
+	email, exists := payload["email"].(string)
 	if !exists || email == "" {
 		return "", errors.New("email not provided")
 	}
@@ -139,14 +139,14 @@ func (s * AccountService) Login(ctx context.Context, payload map[string]string) 
 	if err != nil {
 		return "", err
 	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(account.EncryptedPassword), []byte(payload["password"]))
+	
+	err = bcrypt.CompareHashAndPassword([]byte(account.EncryptedPassword), []byte(payload["password"].(string)))
 	if err != nil {
 		return "", err
 	}
-
+	
 	apiKey, err := s.ApiKeyRepo.FindByAccountID(ctx, account.ID)
-
+	
 	if err != nil {
 		return "", err
 	}

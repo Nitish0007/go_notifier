@@ -37,9 +37,15 @@ func (r *ApiKeyRepository) CreateTx(ctx context.Context, apiKey *models.ApiKey, 
 }
 
 func (r *ApiKeyRepository) FindByAccountID(ctx context.Context, account_id int) (*models.ApiKey, error) {
-	query := `SELECT * FROM api_keys WHERE account_id IS $1`
+	query := `SELECT * FROM api_keys WHERE account_id = $1`
 	apiKey := models.ApiKey{}
-	err := r.DB.QueryRow(ctx, query, account_id).Scan(&apiKey)
+	err := r.DB.QueryRow(ctx, query, account_id).Scan(
+		&apiKey.ID,
+		&apiKey.AccountID,
+		&apiKey.Key,
+		&apiKey.CreatedAt,
+		&apiKey.UpdatedAt,
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -1,13 +1,14 @@
 package initializer
 
 import (
-	"github.com/jackc/pgx/v5"
 	"github.com/go-chi/chi/v5"
-	
+	"github.com/jackc/pgx/v5"
+
+	"github.com/Nitish0007/go_notifier/internal/handlers"
+	"github.com/Nitish0007/go_notifier/internal/notifiers"
+	"github.com/Nitish0007/go_notifier/internal/repositories"
 	"github.com/Nitish0007/go_notifier/internal/routes"
 	"github.com/Nitish0007/go_notifier/internal/services"
-	"github.com/Nitish0007/go_notifier/internal/handlers"
-	"github.com/Nitish0007/go_notifier/internal/repositories"
 )
 
 func InititalizeApplication(conn *pgx.Conn, router *chi.Mux){
@@ -16,14 +17,22 @@ func InititalizeApplication(conn *pgx.Conn, router *chi.Mux){
 	// Intialize Repositories by injecting db connection dependency
 	accRepo := repositories.NewAccountRepository(conn)
 	apiKeyRepo := repositories.NewApiKeyRepository(conn)
+	notificationRepo := repositories.NewNotificationRepository(conn)
+
+	// intialize notifiers
+	emailNotifier := notifiers.NewEmailNotifier(notificationRepo)
 
 	// Initialize Services by injecting corresponding repository dependency
 	accService := services.NewAccountService(accRepo, apiKeyRepo)
+	notificationService := services.NewNotificationService([]notifiers.Notifier{
+		emailNotifier,
+	})
 
 	// Initialize Handlers by injecting corresponding service dependency
 	accountHandler := handlers.NewAccountHandler(accService)
+	notificationHandler := handlers.NewNotificationHandler(notificationService)
 
 	// Register Routes by injecting corresponding handler dependency
-	routes.RegisterAccountRoutes(router, accountHandler)
-
+	routes.RegisterAccountRoutes(conn, router, accountHandler)
+	routes.RegisterNotificationRoutes(conn, router, notificationHandler)
 }

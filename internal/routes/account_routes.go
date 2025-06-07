@@ -2,12 +2,13 @@ package routes
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/Nitish0007/go_notifier/internal/handlers"
 	"github.com/Nitish0007/go_notifier/internal/middlewares"
 )
 
-func RegisterAccountRoutes(r *chi.Mux, h *handlers.AccountHandler){
+func RegisterAccountRoutes(conn *pgx.Conn, r *chi.Mux, h *handlers.AccountHandler){
 	// public routes
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Post("/signup", h.CreateAccountHandler)
@@ -15,7 +16,7 @@ func RegisterAccountRoutes(r *chi.Mux, h *handlers.AccountHandler){
 
 		// protected routes
 		r.Group(func(protectedRouter chi.Router){
-			protectedRouter.Use(middlewares.AuthenticateRequest)
+			protectedRouter.Use(middlewares.AuthenticateRequest(conn))
 
 			// Now simply we can add routes that needs to be authenticated
 		})
