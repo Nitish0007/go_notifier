@@ -22,3 +22,12 @@ func ValidateEmail(email string) bool {
 	matched, _ := regexp.MatchString(emailRegex, email)
 	return matched
 }
+
+func IsValidChannelType(channel string) bool {
+	switch channel {
+	case "email": //, "sms", "in_app":
+		return true
+	default:
+		return false
+	}
+}
