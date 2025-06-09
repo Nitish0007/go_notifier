@@ -4,7 +4,8 @@ CREATE TABLE notifications (
   channel INTEGER NOT NULL CHECK (channel IN (0, 1, 2)), -- e.g., 0=email, 1=sms, 2=in_app
   recipient VARCHAR(255) NOT NULL,
   subject VARCHAR(500),
-  content TEXT NOT NULL,
+  body TEXT,
+  html_body TEXT,
   job_id UUID,
   metadata JSONB DEFAULT '{}'::JSONB,
 
@@ -19,9 +20,9 @@ CREATE TABLE notifications (
 ) PARTITION BY LIST(channel);
 
 -- Create partitions
-CREATE TABLE notifications_email PARTITION OF notifications FOR VALUES IN (1);
-CREATE TABLE notifications_sms PARTITION OF notifications FOR VALUES IN (2);
-CREATE TABLE notifications_in_app PARTITION OF notifications FOR VALUES IN (3);
+CREATE TABLE notifications_email PARTITION OF notifications FOR VALUES IN (0);
+CREATE TABLE notifications_sms PARTITION OF notifications FOR VALUES IN (1);
+CREATE TABLE notifications_in_app PARTITION OF notifications FOR VALUES IN (2);
 
 -- Indexes on parent table
 CREATE INDEX idx_notifications_account_id ON notifications (account_id);

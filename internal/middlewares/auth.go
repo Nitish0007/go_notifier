@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
-	
+
 	"github.com/Nitish0007/go_notifier/utils"
 	"github.com/Nitish0007/go_notifier/internal/repositories"
 )
@@ -22,6 +22,10 @@ func AuthenticateRequest(conn *pgx.Conn) func(http.Handler) http.Handler {
 			authKey := r.Header.Get("Authorization")
 			accountIDStr := chi.URLParam(r, "account_id")
 			accountID, err := strconv.Atoi(accountIDStr)
+			if err != nil {
+				utils.WriteErrorResponse(w, http.StatusUnauthorized, "Invalid account ID")
+				return
+			}
 
 			ctx := r.Context()
 			repo := repositories.NewApiKeyRepository(conn)
@@ -36,7 +40,8 @@ func AuthenticateRequest(conn *pgx.Conn) func(http.Handler) http.Handler {
 				utils.WriteErrorResponse(w, http.StatusUnauthorized, "Invalid Api Key used")
 			}
 
-			next.ServeHTTP(w, r)
+			ctx = utils.SetCurrentAccountID(ctx, accountID)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
