@@ -43,64 +43,27 @@ func (s *NotificationService) CreateNotification(ctx context.Context, data map[s
 		return nil, errors.New("recipient 'to' is required in notification data")
 	}
 
-	if metadata, exists := data["metadata"].(map[string]any); exists {
-		if len(metadata) == 0 {
-			return nil, errors.New("metadata can't be empty")
-		}
-		if _, ok := metadata["from_email"]; !ok || metadata["from_email"] == "" {
-			return nil, errors.New("from_email is required in metadata")
-		}
-		if _, ok := metadata["from_name"]; !ok || metadata["from_name"] == "" {
-			return nil, errors.New("from_name is required in metadata")
-		}
-		if _, ok := metadata["to_email"]; !ok || metadata["to_email"] == "" {
-			return nil, errors.New("to_email is required in metadata")
-		}
-		if _, ok := metadata["to_name"]; !ok || metadata["to_name"] == "" {
-			return nil, errors.New("to_name is required in metadata")
-		}
-		if _, ok := metadata["reply_to_email"]; !ok || metadata["reply_to_email"] == "" {
-			return nil, errors.New("reply_to_email is required in metadata")
-		}
-		if _, ok := metadata["reply_to_name"]; !ok || metadata["reply_to_name"] == "" {
-			return nil, errors.New("reply_to_name is required in metadata")
-		}
-		if _, ok := metadata["subject"]; !ok || metadata["subject"] == "" {
-			return nil, errors.New("subject is required in metadata")
-		}
-	} else {
-		return nil, errors.New("metadata is required in notification data")
+	body, exists := data["body"]
+	if !exists || body == nil || body == "" {
+		data["body"] = ""
+	}
+	htmlBody, exists := data["html_body"]
+	if !exists || htmlBody == nil || htmlBody == "" {
+		data["html_body"] = ""
 	}
 
-	// adding to_email in metadata
-	metadata := data["metadata"].(map[string]any)
-	metadata["to_email"] = data["to"]
-	// removing from data
-	delete(data, "to")
-
-	if data["message"] == nil || data["message"] == "" {
-		return nil, errors.New("message is required in notification data")
-	}
-	if data["body"] == nil || data["body"] == "" {
-		return nil, errors.New("body is required in notification data")
-	}
-	if data["content"] == nil || data["content"] == "" {
-		return nil, errors.New("content is required in notification data")
-	}
-	if data["html_part"] == nil || data["html_part"] == "" {
-		return nil, errors.New("html_part is required in notification data")
+	if data["body"] == "" && data["html_body"] == "" {
+		return nil, errors.New("either 'body' or 'html_body' must be provided in notification data")
 	}
 	// Validation code ends here
 
-
 	notifierObj := s.notifiers[notificationType]
-	log.Printf(">>>>>>>>>>>>> Notifier Object: %+v", notifierObj)
 	n, err := notifierObj.CreateNotification(ctx, data)
 	if err != nil {
 		return nil, err
 	}
 	if n == nil {
-		return nil, errors.New("Failed to create notification")
+		return nil, errors.New("failed to create notification")
 	}
 	
 	return n, nil
