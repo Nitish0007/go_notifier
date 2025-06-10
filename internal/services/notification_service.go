@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"time"
 
 	"github.com/Nitish0007/go_notifier/internal/models"
 	"github.com/Nitish0007/go_notifier/internal/notifiers"
@@ -75,6 +76,14 @@ func (s *NotificationService) CreateBulkNotifications(ctx context.Context, data 
 }
 
 func (s *NotificationService) SendOrScheduleNotification(ctx context.Context, n *models.Notification) error {
+	if n.Status == models.Pending && (n.SendAt.Before(time.Now()) || n.SendAt.After(time.Now().Add(5*time.Minute))) {
+		// push in queue
+		conn := utils.ConnectMQ()
+		defer conn.Close()
 
+		ch, _ := utils.CreateChannel(conn)
+		defer ch.Close()
+
+	}
 	return nil
 }
