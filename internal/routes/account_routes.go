@@ -5,22 +5,15 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Nitish0007/go_notifier/internal/handlers"
-	"github.com/Nitish0007/go_notifier/internal/middlewares"
 )
 
-func RegisterAccountRoutes(conn *pgx.Conn, r *chi.Mux, h *handlers.AccountHandler){
+func RegisterPublicAccountRoutes(conn *pgx.Conn, r chi.Router, h *handlers.AccountHandler) {
 	// public routes
-	r.Route("/api/v1", func(r chi.Router) {
-		r.Post("/signup", h.CreateAccountHandler)
-		r.Get("/login", h.LoginHandler)
+	r.Post("/signup", h.CreateAccountHandler)
+	r.Get("/login", h.LoginHandler)
+}
 
-		// protected routes
-		r.Group(func(protectedRouter chi.Router){
-			protectedRouter.Use(middlewares.AuthenticateRequest(conn))
-
-			// Now simply we can add routes that needs to be authenticated
-		})
-	})
-
-
+func RegisterAccountRoutes(conn *pgx.Conn, r chi.Router, h *handlers.AccountHandler){
+	// protected routes
+ // any route defined here will be authenticated
 }

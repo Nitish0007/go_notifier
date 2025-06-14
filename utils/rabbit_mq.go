@@ -24,6 +24,43 @@ func CreateChannel(conn *rbmq.Connection) (*rbmq.Channel, error) {
 	return ch, err
 }
 
-// func CreateQueue(conn *rbmq.Connection, queue_name string) error {
+func CreateQueue(ch *rbmq.Channel, queue_name string) (*rbmq.Queue, error) {
+	q, err := ch.QueueDeclare(
+		queue_name, // name
+		false,   		// durable
+		false,   		// delete when unused
+		false,   		// exclusive
+		false,   		// no-wait
+		nil,     		// arguments
+	)
+	failOnError(err, "Failed to Declare queue")
+	return &q, err
+}
 
-// }
+func PushToQueue(queue_name string, notificationID string) error {
+	conn := ConnectMQ()
+		defer conn.Close()
+
+		ch, _ := CreateChannel(conn)
+		defer ch.Close()
+
+		q, err := CreateQueue(ch, queue_name)
+		failOnError(err, "Error creating Queue")
+		err = ch.Publish(
+			"",
+			q.Name,
+			false, 
+			false,
+			rbmq.Publishing{
+				ContentType: "text/plain",
+				Body: []byte(notificationID),			
+			},
+		)
+
+		if err != nil {
+			failOnError(err, "Failed while publishing")
+			return err
+		}
+
+		return nil
+}

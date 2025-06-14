@@ -5,6 +5,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/Nitish0007/go_notifier/internal/handlers"
+	"github.com/Nitish0007/go_notifier/internal/middlewares"
 	"github.com/Nitish0007/go_notifier/internal/notifiers"
 	"github.com/Nitish0007/go_notifier/internal/repositories"
 	"github.com/Nitish0007/go_notifier/internal/routes"
@@ -24,15 +25,25 @@ func InititalizeApplication(conn *pgx.Conn, router *chi.Mux){
 
 	// Initialize Services by injecting corresponding repository dependency
 	accService := services.NewAccountService(accRepo, apiKeyRepo)
-	notificationService := services.NewNotificationService([]notifiers.Notifier{
-		emailNotifier,
-	})
+	notificationService := services.NewNotificationService(
+		[]notifiers.Notifier{emailNotifier},
+		notificationRepo,
+	)
 
 	// Initialize Handlers by injecting corresponding service dependency
 	accountHandler := handlers.NewAccountHandler(accService)
 	notificationHandler := handlers.NewNotificationHandler(notificationService)
 
 	// Register Routes by injecting corresponding handler dependency
-	routes.RegisterAccountRoutes(conn, router, accountHandler)
-	routes.RegisterNotificationRoutes(conn, router, notificationHandler)
+	router.Route("/api/v1", func(r chi.Router){
+		routes.RegisterPublicAccountRoutes(conn, r, accountHandler)
+
+		// protected routes 
+		 r.Route("/{account_id}", func(authenticated chi.Router) {
+			authenticated.Use(middlewares.AuthenticateRequest(conn))
+
+			routes.RegisterAccountRoutes(conn, authenticated, accountHandler)
+			routes.RegisterNotificationRoutes(conn, authenticated, notificationHandler)
+    })
+	})
 }

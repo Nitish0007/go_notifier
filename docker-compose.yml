@@ -10,6 +10,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: notifier_prod_db
+    healthcheck: # Wait for db_service to start, before making connection with db
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
+
   notifier_redis:
     image: redis:7-alpine
     platform: linux/amd64
@@ -17,6 +22,35 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+  
+  notifier_rbmq:
+    image: rabbitmq:4.1.1-alpine
+    platform: linux/amd64
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    command: >
+      sh -c "rabbitmq-plugins enable rabbitmq_management && 
+            rabbitmq-server"
+
+  notifier_migrate: # its a one-time run container, and should be exited with code 0 for successful executions of migrations
+    image: migrate/migrate # official image provided by golang-migrate maintainers
+    volumes:
+      - ./db/migrations:/migrations
+    environment:
+      DATABASE_URL: postgres://postgres:12345678@notifier_db:5432/notifier_dev_db?sslmode=disable
+    command:
+      [
+        "-path", "/migrations",
+        "-database", "postgres://postgres:12345678@notifier_db:5432/notifier_dev_db?sslmode=disable",
+        "up"
+      ]
+    depends_on:
+      notifier_db:
+        condition: service_healthy
 
   notifier:
     platform: linux/amd64
@@ -27,13 +61,18 @@ services:
       - "8080:8080"
     volumes:
       # - .:/app # line is commented out to avoid mounting the current directory and avoiding replacement of the built main file
+      - ./configs:/app/configs
       - postgres_data:/var/lib/postgresql/data
       - redis_data:/data
     environment:
       ENV: production
     depends_on:
-      - notifier_db
-      - notifier_redis
+      notifier_db:
+        condition: service_healthy # wait for health check
+      notifier_redis:
+        condition: service_started
+      notifier_rbmq:
+        condition: service_started
 
 volumes:
   postgres_data:
