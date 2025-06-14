@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"regexp"
 	"time"
+	"github.com/google/uuid"
 )
 
 type contextKey string
@@ -34,6 +35,16 @@ func IsValidChannelType(channel string) bool {
 	default:
 		return false
 	}
+}
+
+func IsValidUUID(id string) bool {
+	if id == "" {
+		return false
+	}
+	if _, err := uuid.Parse(id); err != nil {
+		return false
+	}
+	return true
 }
 
 func GetCurrentAccountID(ctx context.Context) int {

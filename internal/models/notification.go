@@ -22,20 +22,20 @@ const (
 )
 
 type Notification struct {
-	ID						string								`json:"id"`
-	AccountID 		int										`json:"account_id"`
-	Channel				NotificationChannel		`json:"channel"`
-	Recipient			string								`json:"recipient"`
-	Subject				string								`json:"subject"`
-	Body					string								`json:"body"`
-	HtmlBody			string								`json:"html_body"`
-	Status				NotificationStatus		`json:"status"`
-	Metadata			map[string]any				`json:"metadata"`
-	ErrorMessage	string								`json:"error_message"`
-	JobID					string								`json:"job_id"`
-	SendAt				time.Time							`json:"send_at"`
-	SentAt				time.Time							`json:"sent_at"`
-	CreatedAt			time.Time							`json:"created_at"`
+	ID            string               `json:"id"`
+	AccountID     int                  `json:"account_id"`
+	Channel       NotificationChannel  `json:"channel"`
+	Recipient     string               `json:"recipient"`
+	Subject       string               `json:"subject"`
+	Body          string               `json:"body"`
+	HtmlBody      string               `json:"html_body"`
+	Status        NotificationStatus   `json:"status"`
+	Metadata      map[string]any       `json:"metadata"`
+	ErrorMessage  *string              `json:"error_message"`
+	JobID         *string              `json:"job_id"`
+	SendAt        *time.Time            `json:"send_at"`
+	SentAt        *time.Time            `json:"sent_at"`
+	CreatedAt     *time.Time            `json:"created_at"`
 }
 
 func StringToNotificationStatus(status string) (NotificationStatus, error) {

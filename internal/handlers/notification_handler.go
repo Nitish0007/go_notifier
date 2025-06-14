@@ -51,6 +51,51 @@ func (h *NotificationHandler) SendNotificationHandler(w http.ResponseWriter, r *
 	utils.WriteJSONResponse(w, http.StatusOK, nil ,"Notification enqueued successfully")
 }
 
+func (h *NotificationHandler) GetNotificationsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	accID := utils.GetCurrentAccountID(ctx)
+	list, err := h.notificationService.GetNotificationsService(ctx, accID)
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+
+	utils.WriteJSONResponse(w, http.StatusOK, list, "Success")
+}
+
+func (h *NotificationHandler) SendNotificationByIDHandler(w http.ResponseWriter, r *http.Request) {
+	payload, err := utils.ParseJSONBody(r)
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Unable to parse payload")
+		return
+	}
+
+	nID, exists := payload["notification_id"].(string)
+	if !exists || !utils.IsValidUUID(nID) {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Invalid notification id")
+		return
+	}
+
+	ctx := r.Context()
+	accID := utils.GetCurrentAccountID(ctx)
+
+	n, err := h.notificationService.GetNotificationService(ctx, nID, accID)
+	if err != nil {
+		log.Printf("ERROR!: %v", err)
+		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, "not able to fetch notification")
+		return
+	}
+	
+	err = h.notificationService.SendOrScheduleNotification(ctx, n)
+	if err != nil {
+		log.Printf("ERROR!: %v", err)
+		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, "not able to schedule notification")
+		return
+	}
+
+	utils.WriteJSONResponse(w, http.StatusOK, nil, "Notification enqued successfully if its send_at time is in past or 10 within 10 minutes in future")
+}
+
 func (h *NotificationHandler) SendBulkNotificationHandler(w http.ResponseWriter, r *http.Request) {
 
 } 

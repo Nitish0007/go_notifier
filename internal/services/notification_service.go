@@ -8,14 +8,16 @@ import (
 
 	"github.com/Nitish0007/go_notifier/internal/models"
 	"github.com/Nitish0007/go_notifier/internal/notifiers"
+	"github.com/Nitish0007/go_notifier/internal/repositories"
 	"github.com/Nitish0007/go_notifier/utils"
 )
 
 type NotificationService struct {
 	notifiers map[string]notifiers.Notifier
+	notificationRepo *repositories.NotificationRepository
 }
 
-func NewNotificationService(list []notifiers.Notifier) *NotificationService {
+func NewNotificationService(list []notifiers.Notifier, nr *repositories.NotificationRepository) *NotificationService {
 	nList := make(map[string]notifiers.Notifier)
 	for _, val := range list {
 		if val.ChannelType() == "email" || val.ChannelType() == "sms" || val.ChannelType() == "in_app" {
@@ -26,7 +28,16 @@ func NewNotificationService(list []notifiers.Notifier) *NotificationService {
 	}
 	return &NotificationService{
 		notifiers: nList,
+		notificationRepo: nr,
 	}
+}
+
+func (s *NotificationService) GetNotificationsService(ctx context.Context, accID int) ([]*models.Notification, error) {
+	list, err := s.notificationRepo.Index(ctx, accID)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
 }
 
 func (s *NotificationService) CreateNotification(ctx context.Context, data map[string]any) (*models.Notification, error) {
@@ -75,15 +86,23 @@ func (s *NotificationService) CreateBulkNotifications(ctx context.Context, data 
 	return nil, nil
 }
 
+func (s *NotificationService) GetNotificationService(ctx context.Context, nID string, accID int) (*models.Notification, error) {
+	n, err := s.notificationRepo.GetByID(ctx, nID, accID)
+	if err != nil {
+		return nil, err
+	}
+	return n, nil
+}
+
 func (s *NotificationService) SendOrScheduleNotification(ctx context.Context, n *models.Notification) error {
-	if n.Status == models.Pending && (n.SendAt.Before(time.Now()) || n.SendAt.After(time.Now().Add(5*time.Minute))) {
+	// if notification is meant to sent straight away or if its scheduled for next 10 mins then simply push it to queue
+	if n.Status == models.Pending && (n.SendAt.Before(time.Now()) || n.SendAt.After(time.Now().Add(10*time.Minute))) {
 		// push in queue
-		conn := utils.ConnectMQ()
-		defer conn.Close()
-
-		ch, _ := utils.CreateChannel(conn)
-		defer ch.Close()
-
+		err := utils.PushToQueue("emailer", n.ID)
+		if err != nil {
+			log.Printf("ERROR!!!: %v", err)
+			return err
+		}
 	}
 	return nil
 }
