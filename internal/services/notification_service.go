@@ -32,7 +32,7 @@ func NewNotificationService(list []notifiers.Notifier, nr *repositories.Notifica
 	}
 }
 
-func (s *NotificationService) GetNotificationsService(ctx context.Context, accID int) ([]*models.Notification, error) {
+func (s *NotificationService) GetNotifications(ctx context.Context, accID int) ([]*models.Notification, error) {
 	list, err := s.notificationRepo.Index(ctx, accID)
 	if err != nil {
 		return nil, err
@@ -42,35 +42,14 @@ func (s *NotificationService) GetNotificationsService(ctx context.Context, accID
 
 func (s *NotificationService) CreateNotification(ctx context.Context, data map[string]any) (*models.Notification, error) {
 	// Validate the notification data
-	notificationType, exists := data["channel"].(string)
-	if !exists {
-		return nil, errors.New("channel is required in notification data")
+	validPayload, err := utils.ValidateNotificationPayload(data)
+	if err != nil {
+		return nil, err
 	}
 
-	if !utils.IsValidChannelType(notificationType) {
-		return nil, errors.New("invalid channel type provided")
-	}
-
-	if recipient, exists := data["to"].(string); !exists || recipient == "" {
-		return nil, errors.New("recipient 'to' is required in notification data")
-	}
-
-	body, exists := data["body"]
-	if !exists || body == nil || body == "" {
-		data["body"] = ""
-	}
-	htmlBody, exists := data["html_body"]
-	if !exists || htmlBody == nil || htmlBody == "" {
-		data["html_body"] = ""
-	}
-
-	if data["body"] == "" && data["html_body"] == "" {
-		return nil, errors.New("either 'body' or 'html_body' must be provided in notification data")
-	}
-	// Validation code ends here
-
+	notificationType, _ := validPayload["channel"].(string)
 	notifierObj := s.notifiers[notificationType]
-	n, err := notifierObj.CreateNotification(ctx, data)
+	n, err := notifierObj.CreateNotification(ctx, validPayload)
 	if err != nil {
 		return nil, err
 	}
@@ -78,15 +57,10 @@ func (s *NotificationService) CreateNotification(ctx context.Context, data map[s
 		return nil, errors.New("failed to create notification")
 	}
 	
-	return n, nil
+return n, nil
 }
 
-func (s *NotificationService) CreateBulkNotifications(ctx context.Context, data []map[string]any) ([]*models.Notification, error) {
-
-	return nil, nil
-}
-
-func (s *NotificationService) GetNotificationService(ctx context.Context, nID string, accID int) (*models.Notification, error) {
+func (s *NotificationService) GetNotificationById(ctx context.Context, nID string, accID int) (*models.Notification, error) {
 	n, err := s.notificationRepo.GetByID(ctx, nID, accID)
 	if err != nil {
 		return nil, err
@@ -98,7 +72,11 @@ func (s *NotificationService) SendOrScheduleNotification(ctx context.Context, n 
 	// if notification is meant to sent straight away or if its scheduled for next 10 mins then simply push it to queue
 	if n.Status == models.Pending && (n.SendAt.Before(time.Now()) || n.SendAt.After(time.Now().Add(10*time.Minute))) {
 		// push in queue
-		err := utils.PushToQueue("emailer", n.ID)
+		body := map[string]any{
+			"notificationID": n.ID,
+			"accountID": utils.GetCurrentAccountID(ctx),
+		}
+		err := utils.PushToQueue("emailer", body)
 		if err != nil {
 			log.Printf("ERROR!!!: %v", err)
 			return err

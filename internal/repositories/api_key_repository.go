@@ -3,16 +3,17 @@ package repositories
 import (
 	"context"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Nitish0007/go_notifier/internal/models"
 )
 
 
 type ApiKeyRepository struct {
-	DB *pgx.Conn
+	DB *pgxpool.Pool
 }
 
-func NewApiKeyRepository(conn *pgx.Conn) *ApiKeyRepository{
+func NewApiKeyRepository(conn *pgxpool.Pool) *ApiKeyRepository{
 	return &ApiKeyRepository{
 		DB: conn,
 	}

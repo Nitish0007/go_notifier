@@ -2,16 +2,18 @@ package repositories
 
 import (
 	"context"
+
 	"github.com/Nitish0007/go_notifier/internal/models"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type AccountRepository struct {
-	DB *pgx.Conn
+	DB *pgxpool.Pool
 }
 
-func NewAccountRepository(conn *pgx.Conn) *AccountRepository {
+func NewAccountRepository(conn *pgxpool.Pool) *AccountRepository {
 	return &AccountRepository{
 		DB: conn,
 	}
@@ -49,7 +51,7 @@ func (r *AccountRepository) FindAccountByEmail(ctx context.Context, email string
 		&account.CreatedAt,
 		&account.UpdatedAt,
 	)
-	if(err != nil){
+	if err != nil {
 		return nil, err
 	}
 	return &account, nil

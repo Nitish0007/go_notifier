@@ -18,6 +18,7 @@ func NewNotificationHandler(s *services.NotificationService) *NotificationHandle
 	}
 }
 
+// create and schedule notification
 func (h *NotificationHandler) SendNotificationHandler(w http.ResponseWriter, r *http.Request) {
 	
 	payload, err := utils.ParseJSONBody(r)
@@ -51,10 +52,36 @@ func (h *NotificationHandler) SendNotificationHandler(w http.ResponseWriter, r *
 	utils.WriteJSONResponse(w, http.StatusOK, nil ,"Notification enqueued successfully")
 }
 
+// create single notification
+func (h *NotificationHandler) CreateNotificationHandler(w http.ResponseWriter, r *http.Request) {
+	payload, err := utils.ParseJSONBody(r)
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Unable to parse payload")
+		return
+	}
+	
+	notificationData, exists := payload["notification"].(map[string]any)
+	if !exists {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Notification data is required")
+		return
+	}
+	
+	ctx := r.Context()
+	n, err := h.notificationService.CreateNotification(ctx, notificationData)
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+
+	utils.WriteJSONResponse(w, http.StatusCreated, n, "Notification created successfully")
+}
+
+// TODO: add pagination and filtering
+// index api for notifications in context of account
 func (h *NotificationHandler) GetNotificationsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accID := utils.GetCurrentAccountID(ctx)
-	list, err := h.notificationService.GetNotificationsService(ctx, accID)
+	list, err := h.notificationService.GetNotifications(ctx, accID)
 	if err != nil {
 		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
 		return
@@ -79,7 +106,7 @@ func (h *NotificationHandler) SendNotificationByIDHandler(w http.ResponseWriter,
 	ctx := r.Context()
 	accID := utils.GetCurrentAccountID(ctx)
 
-	n, err := h.notificationService.GetNotificationService(ctx, nID, accID)
+	n, err := h.notificationService.GetNotificationById(ctx, nID, accID)
 	if err != nil {
 		log.Printf("ERROR!: %v", err)
 		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, "not able to fetch notification")
@@ -95,7 +122,3 @@ func (h *NotificationHandler) SendNotificationByIDHandler(w http.ResponseWriter,
 
 	utils.WriteJSONResponse(w, http.StatusOK, nil, "Notification enqued successfully if its send_at time is in past or 10 within 10 minutes in future")
 }
-
-func (h *NotificationHandler) SendBulkNotificationHandler(w http.ResponseWriter, r *http.Request) {
-
-} 

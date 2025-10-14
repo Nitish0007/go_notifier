@@ -54,16 +54,16 @@ func (h *AccountHandler) CreateAccountHandler(w http.ResponseWriter, r *http.Req
 func (h *AccountHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	payload, err := utils.ParseJSONBody(r)
 
-	if err != nil{
+	if err != nil {
 		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	loginData, exists := payload["login"].(map[string]any)
-	if(!exists || len(loginData) == 0){
+	if !exists || len(loginData) == 0 {
 		utils.WriteErrorResponse(w, http.StatusBadRequest, "Credentials not provided")
 		return
 	}
-	
+
 	ctx := r.Context()
 	apiKey, err := h.accountService.Login(ctx, loginData)
 

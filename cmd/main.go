@@ -1,7 +1,7 @@
 package main
 
 import (
-	"context"
+	// "context"
 	"log"
 	"net/http"
 
@@ -22,16 +22,15 @@ func PrintRoutes(r chi.Router) {
 	}
 }
 
-func main(){
+func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile) // configuring logger to print filename and line number
 
-	conn, _ := utils.ConnectDB()
-	defer conn.Close(context.Background())
-	
-	r := utils.InitRouter()
-	initializer.InititalizeApplication(conn, r)
+	connPool, _ := utils.ConnectDB()
+	defer connPool.Close()
 
-	
+	r := utils.InitRouter()
+	initializer.InititalizeApplication(connPool, r)
+
 	// PrintRoutes(r)
 
 	http.ListenAndServe(":8080", r)

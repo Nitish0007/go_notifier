@@ -17,7 +17,7 @@ func NewEmailNotifier(r *repositories.NotificationRepository) *EmailNotifier {
 	return &EmailNotifier{notificationRepository: r}
 }
 
-func (n *EmailNotifier) Send(to string, payload map[string]any) error {
+func (n *EmailNotifier) Send(body map[string]any) error {
 	
 	return nil
 }
