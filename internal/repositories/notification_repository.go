@@ -5,18 +5,18 @@ import (
 	// "github.com/Nitish0007/go_notifier/internal/models"
 
 	"context"
-	"log"
 	"fmt"
+	"log"
 
 	"github.com/Nitish0007/go_notifier/internal/models"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type NotificationRepository struct {
-	DB *pgx.Conn
+	DB *pgxpool.Pool
 }
 
-func NewNotificationRepository(conn *pgx.Conn) *NotificationRepository {
+func NewNotificationRepository(conn *pgxpool.Pool) *NotificationRepository {
 	return &NotificationRepository{
 		DB: conn,
 	}

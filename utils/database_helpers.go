@@ -1,17 +1,17 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
-	"context"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"gopkg.in/yaml.v2"
 )
 
 type dbConfig struct {
-	Adapter	 string `yaml:"adapter"`
+	Adapter  string `yaml:"adapter"`
 	Host     string `yaml:"host"`
 	Port     int    `yaml:"port"`
 	Username string `yaml:"username"`
@@ -25,14 +25,16 @@ type envConfig struct {
 
 var dbConf dbConfig
 
+// var DB *pgxpool.Pool
+
 // Public methods below
-func ConnectDB() (*pgx.Conn, error) {
+func ConnectDB() (*pgxpool.Pool, error) {
 	setDbConfigs()
 	dbURL := getDbURL()
-	conn, err := pgx.Connect(context.Background(), dbURL)
+	conn, err := pgxpool.New(context.Background(), dbURL)
 	if err != nil {
 		log.Fatalf("Unable to connect to database: %v", err)
-		return	nil, err
+		return nil, err
 	}
 	err = conn.Ping(context.Background())
 	if err != nil {
@@ -44,16 +46,16 @@ func ConnectDB() (*pgx.Conn, error) {
 }
 
 // Private methods below
-func setDbConfigs() {	
+func setDbConfigs() {
 	fileData, err := os.ReadFile("configs/database.yml")
-	if(err != nil){
+	if err != nil {
 		log.Fatalf("Could not read config file: %v", err)
 		panic(err)
 	}
 
 	var envConf envConfig
 	err = yaml.Unmarshal(fileData, &envConf)
-	if(err != nil){
+	if err != nil {
 		log.Fatalf("Could not parse config file: %v", err)
 		panic(err)
 	}

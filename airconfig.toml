@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 
 [build]
   cmd = "go build -o ./tmp/main ./cmd/main.go"
-  bin = "mp/main"
+  bin = "tmp/main"
   full_bin = "false"
   include_ext = ["go", "tpl", "tmpl", "html"]
   exclude_dir = ["tmp", "vendor", "node_modules"]
@@ -15,7 +15,7 @@ tmp_dir = "tmp"
 
 [log]
   time = true
-  leve = "debug"
+  level = "debug"
 
 [color]
   main = "yellow"

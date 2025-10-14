@@ -18,7 +18,7 @@ func InitRouter() *chi.Mux {
 	router.Use(middleware.RealIP)
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Timeout(60 * time.Second)) // Set a timeout of 60 seconds for requests
-	router.Use(middleware.URLFormat) // Parse extension from url and put it on request context, like .json, .xml
+	router.Use(middleware.URLFormat)                 // Parse extension from url and put it on request context, like .json, .xml
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},

@@ -4,7 +4,7 @@ FROM golang:1.24
 WORKDIR /app
 
 # Install air for live reloading
-RUN go install github.com/air-verse/air@v1.62.0
+# RUN go install github.com/air-verse/air@v1.62.0
 
 # Copy go mod files first and download dependencies (for caching)
 COPY go.mod go.sum ./
@@ -21,4 +21,5 @@ EXPOSE 8080
 # Default command to run air (watch for changes and reload)
 # CMD ["air"]
 # CMD ["air", "-c", ".air.toml"]
-CMD ["air", "-c", "airconfig.toml"]
+# CMD ["air", "-c", "airconfig.toml"]
+CMD ["go", "run", "./cmd/main.go"]
