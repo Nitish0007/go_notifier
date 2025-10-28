@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/Nitish0007/go_notifier/internal/models"
@@ -32,26 +31,8 @@ func (s *AccountService) CreateAccount(ctx context.Context, account *models.Acco
 		return nil, err
 	}
 
-	// Start a transaction
-	tx, err := s.AccRepo.DB.BeginTx(ctx, pgx.TxOptions{})
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback(ctx)
-
-	// create account
-	if err := s.AccRepo.CreateTx(ctx, account, tx); err != nil {
-		return nil, err
-	}
-
-	// initialize API key
-	apiKey := &models.ApiKey{
-		Key:      utils.GenerateAlphaNumericKey(),
-		AccountID: account.ID,
-	}
-
-	// create API key
-	if err := s.ApiKeyRepo.CreateTx(ctx, apiKey, tx); err != nil {
+	// create account and API key in a single transaction
+	if err := s.AccRepo.CreateAccountWithAPIKeyWithinTx(ctx, account, s.AccRepo.DB); err != nil {
 		return nil, err
 	}
 
@@ -59,10 +40,6 @@ func (s *AccountService) CreateAccount(ctx context.Context, account *models.Acco
 	// Can be created a new DB tenant with name 'account_${account.ID}' if one account has huge amount of data
 	// Tenancy scheme can be implemented here: single database schema-based multi-tenancy
 	// migration needs to be handled separately for each tenant
-
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
-	}
 
 	return account, nil
 }

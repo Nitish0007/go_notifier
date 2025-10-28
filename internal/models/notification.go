@@ -22,20 +22,22 @@ const (
 )
 
 type Notification struct {
-	ID            string               `json:"id"`
-	AccountID     int                  `json:"account_id"`
-	Channel       NotificationChannel  `json:"channel"`
-	Recipient     string               `json:"recipient"`
-	Subject       string               `json:"subject"`
-	Body          string               `json:"body"`
-	HtmlBody      string               `json:"html_body"`
-	Status        NotificationStatus   `json:"status"`
-	Metadata      map[string]any       `json:"metadata"`
-	ErrorMessage  *string              `json:"error_message"`
-	JobID         *string              `json:"job_id"`
-	SendAt        *time.Time            `json:"send_at"`
-	SentAt        *time.Time            `json:"sent_at"`
-	CreatedAt     *time.Time            `json:"created_at"`
+	ID           string               `json:"id" gorm:"type:uuid;primaryKey;"`
+	AccountID    int                  `json:"account_id" gorm:"not null;index"`
+	Channel      NotificationChannel  `json:"channel" gorm:"not null;check:channel IN (0,1,2)"`
+	Recipient    string               `json:"recipient" gorm:"not null;size:255"`
+	Subject      string               `json:"subject" gorm:"size:500"`
+	Body         string               `json:"body" gorm:"type:text"`
+	HtmlBody     string               `json:"html_body" gorm:"type:text"`
+	Status       NotificationStatus   `json:"status" gorm:"not null;default:0;check:status IN (0,1,2,3)"`
+	Metadata     map[string]any       `json:"metadata" gorm:"type:jsonb;default:'{}'"`
+	ErrorMessage *string              `json:"error_message" gorm:"type:text"`
+	JobID        *string              `json:"job_id" gorm:"type:uuid"`
+	SendAt       *time.Time           `json:"send_at"`
+	SentAt       *time.Time           `json:"sent_at"`
+	CreatedAt    time.Time            `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt    time.Time            `json:"updated_at" gorm:"autoUpdateTime"`
+	BatchID      *string              `json:"batch_id" gorm:"type:uuid;index"`
 }
 
 func StringToNotificationStatus(status string) (NotificationStatus, error) {

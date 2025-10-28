@@ -1,8 +1,9 @@
 package initializer
 
 import (
+	"gorm.io/gorm"
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	// "github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Nitish0007/go_notifier/internal/handlers"
 	"github.com/Nitish0007/go_notifier/internal/middlewares"
@@ -12,13 +13,13 @@ import (
 	"github.com/Nitish0007/go_notifier/internal/services"
 )
 
-func InititalizeApplication(connPool *pgxpool.Pool, router *chi.Mux) {
+func InititalizeApplication(db *gorm.DB, router *chi.Mux) {
 	// initializing repositories, services and handlers by injecting dependencies
 
 	// Intialize Repositories by injecting db connection dependency
-	accRepo := repositories.NewAccountRepository(connPool)
-	apiKeyRepo := repositories.NewApiKeyRepository(connPool)
-	notificationRepo := repositories.NewNotificationRepository(connPool)
+	accRepo := repositories.NewAccountRepository(db)
+	apiKeyRepo := repositories.NewApiKeyRepository(db)
+	notificationRepo := repositories.NewNotificationRepository(db)
 
 	// intialize notifiers
 	emailNotifier := notifiers.NewEmailNotifier(notificationRepo)
@@ -37,15 +38,15 @@ func InititalizeApplication(connPool *pgxpool.Pool, router *chi.Mux) {
 	bulkNotificationHandler := handlers.NewBulkNotificationHandler(bulkNotificationService)
 	// Register Routes by injecting corresponding handler dependency
 	router.Route("/api/v1", func(r chi.Router) {
-		routes.RegisterPublicAccountRoutes(connPool, r, accountHandler)
+		routes.RegisterPublicAccountRoutes(db, r, accountHandler)
 
 		// protected routes
 		r.Route("/{account_id}", func(authenticated chi.Router) {
-			authenticated.Use(middlewares.AuthenticateRequest(connPool))
+			authenticated.Use(middlewares.AuthenticateRequest(db))
 
-			routes.RegisterAccountRoutes(connPool, authenticated, accountHandler)
-			routes.RegisterNotificationRoutes(connPool, authenticated, notificationHandler)
-			routes.RegisterBulkNotificationRoutes(connPool, authenticated, bulkNotificationHandler)
+			routes.RegisterAccountRoutes(db, authenticated, accountHandler)
+			routes.RegisterNotificationRoutes(db, authenticated, notificationHandler)
+			routes.RegisterBulkNotificationRoutes(db, authenticated, bulkNotificationHandler)
 		})
 	})
 }
