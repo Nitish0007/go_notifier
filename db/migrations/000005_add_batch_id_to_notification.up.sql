@@ -1,0 +1,2 @@
+ALTER TABLE notifications
+ADD COLUMN batch_id TEXT NOT NULL DEFAULT '';

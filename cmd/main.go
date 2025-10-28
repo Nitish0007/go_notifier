@@ -25,11 +25,19 @@ func PrintRoutes(r chi.Router) {
 func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile) // configuring logger to print filename and line number
 
-	connPool, _ := utils.ConnectDB()
-	defer connPool.Close()
+	db, err := utils.ConnectDB()
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("Failed to get underlying sql.DB: %v", err)
+	}
+	defer sqlDB.Close()
 
 	r := utils.InitRouter()
-	initializer.InititalizeApplication(connPool, r)
+	initializer.InititalizeApplication(db, r)
 
 	// PrintRoutes(r)
 
