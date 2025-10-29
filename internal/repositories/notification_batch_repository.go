@@ -19,11 +19,23 @@ func (r *NotificationBatchRepository) Create(ctx context.Context, batch *models.
 	return r.DB.WithContext(ctx).Create(batch).Error
 }
 
-func (r *NotificationBatchRepository) GetByBatchID(ctx context.Context, batchID string) (*models.NotificationBatch, error) {
-	var batch models.NotificationBatch
-	err := r.DB.WithContext(ctx).Where("batch_id = ?", batchID).First(&batch).Error
-	return &batch, err
+func (r *NotificationBatchRepository) GetByAccountID(ctx context.Context, accountID int) ([]*models.NotificationBatch, error) {
+	var batches []*models.NotificationBatch
+	err := r.DB.WithContext(ctx).Where("account_id = ?", accountID).Find(&batches).Error; if err != nil {
+		return nil, err
+	}
+	return batches, nil
 }
+
+
+func (r *NotificationBatchRepository) GetByID(ctx context.Context, id string) (*models.NotificationBatch, error) {
+	var batch models.NotificationBatch
+	err := r.DB.WithContext(ctx).Where("id = ?", id).First(&batch).Error; if err != nil {
+		return nil, err
+	}
+	return &batch, nil
+}
+
 
 // func (r *NotificationBatchRepository) UpdateProgress(ctx context.Context, batchID string, successful, failed int) error {
 // 	return r.DB.WithContext(ctx).Model(&models.NotificationBatch{}).

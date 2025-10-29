@@ -1,6 +1,7 @@
 CREATE TABLE notification_batches (
   id UUID DEFAULT gen_random_uuid(),
   account_id INT NOT NULL,
+  payload JSONB DEFAULT '{}'::JSONB NOT NULL, -- payload of the notifications in the batch
   count int DEFAULT 0,
   successful_count int DEFAULT 0,
   failed_count int DEFAULT 0,

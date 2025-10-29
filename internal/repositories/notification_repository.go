@@ -1,7 +1,6 @@
 package repositories
 
 import (
-	"time"
 	"context"
 
 	"github.com/Nitish0007/go_notifier/internal/models"
@@ -133,15 +132,4 @@ func (r *NotificationRepository) GetByID(ctx context.Context, id string, accID i
 	var notification models.Notification
 	err := r.DB.WithContext(ctx).Where("id = ? AND account_id = ?", id, accID).First(&notification).Error
 	return &notification, err
-}
-
-func (r *NotificationRepository) UpdateStatus(ctx context.Context, id string, status models.NotificationStatus, errorMsg *string) error {
-	updates := map[string]interface{}{"status": status}
-	if errorMsg != nil {
-			updates["error_message"] = *errorMsg
-	}
-	if status == models.Sent {
-			updates["sent_at"] = time.Now()
-	}
-	return r.DB.WithContext(ctx).Model(&models.Notification{}).Where("id = ?", id).Updates(updates).Error
 }

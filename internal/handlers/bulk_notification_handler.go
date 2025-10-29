@@ -27,7 +27,7 @@ func (h *BulkNotificationHandler) CreateBulkNotificationsHandler(w http.Response
 	ctx := r.Context()
 	response, err := h.bulkNotificationService.CreateBulkNotifications(ctx, payload["notifications"].([]map[string]any)) 
 	if err != nil {
-		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, "invalid payloads")
+		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
 
