@@ -1,11 +1,9 @@
 package utils
 
 import (
-	// "github.com/Nitish0007/go_notifier/internal/models"
-	// "github.com/Nitish0007/go_notifier/internal/repositories"
 	"errors"
 	"strings"
-	"sync"
+	// "sync"
 )
 
 // This method is beign called inside ValidateBulkNotificationPayload, So make sure changes in this won't negatively affect the flow
@@ -47,64 +45,64 @@ func ValidateNotificationPayload(payload map[string]any) (map[string]any, error)
 	return payload, nil
 }
 
-func ValidateBulkNotificationPayload(payload []map[string]any) (valid []map[string]any, invalid []map[string]any) {
-	payloadCollection := make(chan map[string]any)   // contain all payload
-	validPayloads := make(chan map[string]any)   // valid chunks of payloads
-	invalidPayloads := make(chan map[string]any) // chunks of invalid payloads
+// func ValidateBulkNotificationPayload(payload []map[string]any) (valid []map[string]any, invalid []map[string]any) {
+// 	payloadCollection := make(chan map[string]any)   // contain all payload
+// 	validPayloads := make(chan map[string]any)   // valid chunks of payloads
+// 	invalidPayloads := make(chan map[string]any) // chunks of invalid payloads
 
-	var workers int
-	wg := sync.WaitGroup{}
+// 	var workers int
+// 	wg := sync.WaitGroup{}
 
-	// set the number of workers based on the payload size
-	switch payloadSize := len(payload); {
-	case payloadSize < 5:
-		workers = 1
-	case payloadSize > 5 && payloadSize < 60:
-		workers = 3
-	default:
-		workers = 5
-	}
+// 	// set the number of workers based on the payload size
+// 	switch payloadSize := len(payload); {
+// 	case payloadSize < 5:
+// 		workers = 1
+// 	case payloadSize > 5 && payloadSize < 60:
+// 		workers = 3
+// 	default:
+// 		workers = 5
+// 	}
 
-	// worker pool pattern
-	// Initializing go routines(workers)
-	for range workers {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for p := range payloadCollection {
-				vp, err := ValidateNotificationPayload(p)
-				if err != nil {
-					invalidPayloads <- p
-				} else {
-					validPayloads <- vp
-				}
-			}
-		}()
-	}
+// 	// worker pool pattern
+// 	// Initializing go routines(workers)
+// 	for range workers {
+// 		wg.Add(1)
+// 		go func() {
+// 			defer wg.Done()
+// 			for p := range payloadCollection {
+// 				vp, err := ValidateNotificationPayload(p)
+// 				if err != nil {
+// 					invalidPayloads <- p
+// 				} else {
+// 					validPayloads <- vp
+// 				}
+// 			}
+// 		}()
+// 	}
 
-	// send all payloads to workers via channel
-	go func() {
-		defer close(payloadCollection)
-		for _, p := range payload {
-			payloadCollection <- p
-		}
-	}()
+// 	// send all payloads to workers via channel
+// 	go func() {
+// 		defer close(payloadCollection)
+// 		for _, p := range payload {
+// 			payloadCollection <- p
+// 		}
+// 	}()
 
-	// close channels
-	wg.Wait()
-	close(validPayloads)
-	close(invalidPayloads)
+// 	// close channels
+// 	wg.Wait()
+// 	close(validPayloads)
+// 	close(invalidPayloads)
 
-	validPayloadSlice := make([]map[string]any, 0)
-	invalidePayloadSlice := make([]map[string]any, 0)
-	// adding data to slices from channels
-	for vp := range validPayloads {
-		validPayloadSlice = append(validPayloadSlice, vp)
-	}
+// 	validPayloadSlice := make([]map[string]any, 0)
+// 	invalidePayloadSlice := make([]map[string]any, 0)
+// 	// adding data to slices from channels
+// 	for vp := range validPayloads {
+// 		validPayloadSlice = append(validPayloadSlice, vp)
+// 	}
 
-	for ivp := range invalidPayloads {
-		invalidePayloadSlice = append(invalidePayloadSlice, ivp)
-	}
+// 	for ivp := range invalidPayloads {
+// 		invalidePayloadSlice = append(invalidePayloadSlice, ivp)
+// 	}
 
-	return validPayloadSlice, invalidePayloadSlice
-}
+// 	return validPayloadSlice, invalidePayloadSlice
+// }
