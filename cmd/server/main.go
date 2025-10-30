@@ -23,6 +23,7 @@ func PrintRoutes(r chi.Router) {
 }
 
 func main() {
+	log.Println("\n\nStarting API Server...")
 	log.SetFlags(log.LstdFlags | log.Llongfile) // configuring logger to print filename and line number
 
 	db, err := utils.ConnectDB()
