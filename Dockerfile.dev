@@ -22,4 +22,8 @@ EXPOSE 8080
 # CMD ["air"]
 # CMD ["air", "-c", ".air.toml"]
 # CMD ["air", "-c", "airconfig.toml"]
-CMD ["go", "run", "./cmd/main.go"]
+
+
+# let docker-compose.dev.yml handle the command to run the server and workers
+# CMD ["go", "run", "./cmd/server/main.go"]
+# CMD ["go", "run", "./cmd/workers/main.go"]
