@@ -1,2 +1,2 @@
 ALTER TABLE notifications
-ADD COLUMN batch_id TEXT NOT NULL DEFAULT '';
+ADD COLUMN batch_id UUID DEFAULT NULL;

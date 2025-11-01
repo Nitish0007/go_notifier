@@ -52,9 +52,9 @@ func (n *EmailNotifier) CreateNotification(ctx context.Context, payload map[stri
 	notification.HtmlBody = payload["html_body"].(string)
 	sendTime := payload["send_at"]
 	if sendTime != nil {
-		*notification.SendAt = utils.ParseTime(sendTime.(string))
+		notification.SendAt = utils.ParseTime(sendTime.(string))
 	} else {
-		*notification.SendAt = utils.GetCurrentTime()
+		notification.SendAt = utils.GetCurrentTime()
 	}
 	
 	sanitizedMetadata := make(map[string]any)	

@@ -3,6 +3,8 @@ package models
 import (
 	"errors"
 	"time"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type NotificationStatus int
@@ -30,14 +32,21 @@ type Notification struct {
 	Body         string               `json:"body" gorm:"type:text"`
 	HtmlBody     string               `json:"html_body" gorm:"type:text"`
 	Status       NotificationStatus   `json:"status" gorm:"not null;default:0;check:status IN (0,1,2,3)"`
-	Metadata     map[string]any       `json:"metadata" gorm:"type:jsonb;default:'{}'"`
+	Metadata     map[string]any       `json:"metadata" gorm:"type:jsonb; default:'{}'; serializer:json"`
 	ErrorMessage *string              `json:"error_message" gorm:"type:text"`
 	JobID        *string              `json:"job_id" gorm:"type:uuid"`
 	SendAt       *time.Time           `json:"send_at"`
 	SentAt       *time.Time           `json:"sent_at"`
 	CreatedAt    time.Time            `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt    time.Time            `json:"updated_at" gorm:"autoUpdateTime"`
 	BatchID      *string              `json:"batch_id" gorm:"type:uuid;index"`
+}
+
+// Before Create hook to generate UUID
+func (n *Notification) BeforeCreate(tx *gorm.DB) error {
+	if n.ID == "" {
+		n.ID = uuid.NewString()
+	}
+	return nil
 }
 
 func StringToNotificationStatus(status string) (NotificationStatus, error) {

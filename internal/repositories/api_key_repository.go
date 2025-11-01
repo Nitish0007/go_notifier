@@ -25,10 +25,10 @@ func (r *ApiKeyRepository) Create(ctx context.Context, apiKey *models.ApiKey) er
 	return nil
 }
 
-func (r *ApiKeyRepository) FindByAccountID(ctx context.Context, accountID int) (*models.ApiKey, error) {
+func (r *ApiKeyRepository) FindByAccountID(ctx context.Context, accountID int) (models.ApiKey, error) {
 	var apiKey models.ApiKey
 	err := r.DB.WithContext(ctx).Where("account_id = ?", accountID).First(&apiKey).Error; if err != nil {
-		return nil, err
+		return models.ApiKey{}, err
 	}
-	return &apiKey, nil
+	return apiKey, nil
 }
