@@ -59,14 +59,15 @@ func SetCurrentAccountID(ctx context.Context, accountID int) context.Context {
 	return context.WithValue(ctx, CurrentAccountID, accountID)
 }
 
-func ParseTime(timeStr string) time.Time {
+func ParseTime(timeStr string) *time.Time {
 	t, err := time.Parse(time.RFC3339, timeStr)
 	if err != nil {
-		return time.Time{} // return zero time if parsing fails
+		return nil // return zero time if parsing fails
 	}
-	return t
+	return &t
 }
 
-func GetCurrentTime() time.Time {
-	return time.Now().UTC()
+func GetCurrentTime() *time.Time {
+	t := time.Now().UTC()
+	return &t
 }
