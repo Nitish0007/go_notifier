@@ -1,8 +1,9 @@
 package initializer
 
 import (
-	"gorm.io/gorm"
 	"github.com/go-chi/chi/v5"
+	"gorm.io/gorm"
+
 	// "github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Nitish0007/go_notifier/internal/handlers"
@@ -20,6 +21,8 @@ func InititalizeApplication(db *gorm.DB, router *chi.Mux) {
 	accRepo := repositories.NewAccountRepository(db)
 	apiKeyRepo := repositories.NewApiKeyRepository(db)
 	notificationRepo := repositories.NewNotificationRepository(db)
+	notificationBatchRepo := repositories.NewNotificationBatchRepository(db)
+	notificationBatchErrorRepo := repositories.NewNotificationBatchErrorRepo(db)
 
 	// intialize notifiers
 	emailNotifier := notifiers.NewEmailNotifier(notificationRepo)
@@ -30,7 +33,7 @@ func InititalizeApplication(db *gorm.DB, router *chi.Mux) {
 		[]notifiers.Notifier{emailNotifier},
 		notificationRepo,
 	)
-	bulkNotificationService := services.NewBulkNotificationService(notificationRepo)
+	bulkNotificationService := services.NewBulkNotificationService(notificationRepo, notificationBatchRepo, notificationBatchErrorRepo)
 
 	// Initialize Handlers by injecting corresponding service dependency
 	accountHandler := handlers.NewAccountHandler(accService)

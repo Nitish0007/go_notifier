@@ -16,7 +16,7 @@ func NewNotificationBatchRepository(db *gorm.DB) *NotificationBatchRepository {
 }
 
 func (r *NotificationBatchRepository) Create(ctx context.Context, batch *models.NotificationBatch) error {
-	return r.DB.WithContext(ctx).Create(batch).Error
+	return r.DB.WithContext(ctx).Create(&batch).Error
 }
 
 func (r *NotificationBatchRepository) GetByAccountID(ctx context.Context, accountID int) ([]*models.NotificationBatch, error) {
