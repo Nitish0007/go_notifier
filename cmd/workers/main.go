@@ -15,7 +15,7 @@ func main() {
 
 	// get all workers
 	workers := []func() {
-		workers.ConsumeBulkNotificationCreation,
+		workers.ConsumeNotificationBatch,
 		workers.ConsumeEmailNotifications,
 	}
 

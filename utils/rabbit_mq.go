@@ -16,7 +16,7 @@ func failOnError(err error, msg string) {
 func ConnectMQ() *rbmq.Connection {
 	conn, err := rbmq.Dial("amqp://user:password@notifier_rbmq:5672/")
 	failOnError(err, "Failed to connect to Rabbit MQ!")
-	return conn	
+	return conn
 }
 
 func CreateChannel(conn *rbmq.Connection) (*rbmq.Channel, error) {
@@ -28,11 +28,11 @@ func CreateChannel(conn *rbmq.Connection) (*rbmq.Channel, error) {
 func CreateQueue(ch *rbmq.Channel, queue_name string) (*rbmq.Queue, error) {
 	q, err := ch.QueueDeclare(
 		queue_name, // name
-		false,   		// durable
-		false,   		// delete when unused
-		false,   		// exclusive
-		false,   		// no-wait
-		nil,     		// arguments
+		false,      // durable
+		false,      // delete when unused
+		false,      // exclusive
+		false,      // no-wait
+		nil,        // arguments
 	)
 	failOnError(err, "Failed to Declare queue")
 	return &q, err
@@ -53,11 +53,11 @@ func PushToQueue(queue_name string, body map[string]any) error {
 	err = ch.Publish(
 		"",
 		q.Name,
-		false, 
+		false,
 		false,
 		rbmq.Publishing{
 			ContentType: "application/json",
-			Body: jsonBody,			
+			Body:        jsonBody,
 		},
 	)
 
