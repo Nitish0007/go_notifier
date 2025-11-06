@@ -56,6 +56,7 @@ func PushToQueue(queue_name string, body map[string]any) error {
 		false,
 		false,
 		rbmq.Publishing{
+			DeliveryMode: rbmq.Persistent,
 			ContentType: "application/json",
 			Body:        jsonBody,
 		},

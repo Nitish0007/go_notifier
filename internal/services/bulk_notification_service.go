@@ -76,23 +76,24 @@ func (s *BulkNotificationService) CreateBulkNotifications(ctx context.Context, d
 	}, nil
 }
 
-func (s *BulkNotificationService) ProcessBatch(ctx context.Context, batchID string) {
+func (s *BulkNotificationService) ProcessBatch(ctx context.Context, batchID string) error {
 	batch, err := s.notificationBatchRepo.GetByID(ctx, batchID)
 	if err != nil {
 		log.Printf("ERROR!: %v", err)
-		return
+		return err
 	}
 
 	data, ok := batch.Payload["notifications"].([]map[string]any)
 	if !ok {
 		log.Printf("ERROR!: bad format of payload: %v", batch.Payload)
-		return
+		return errors.New("bad format of payload")
 	}
 	err = validateBulkNotificationPayload(data, batch.ID)
 	if err != nil {
 		log.Printf("ERROR!: %v", err)
-		return
+		return err
 	}
+	return nil
 }
 
 // Private method
