@@ -1,33 +1,48 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/Nitish0007/go_notifier/internal/repositories"
+	"github.com/Nitish0007/go_notifier/internal/services"
 	"github.com/Nitish0007/go_notifier/internal/workers"
+	"github.com/Nitish0007/go_notifier/utils"
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile) // configuring logger to print filename and line number
 	log.Println("\n\nStarting Workers...")
 
-	// get all workers
-	workers := []func() {
-		workers.ConsumeNotificationBatch,
-		workers.ConsumeEmailNotifications,
+	// make database connection for workers
+	dbConn, err := utils.ConnectDB()
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// start all workers
-	for _, worker := range workers {
-		go worker()
-	}
+	// make RabbitMQ connection for workers
+	rbmqConn := utils.ConnectMQ()
+	defer rbmqConn.Close()
 
-	// wait for all workers to finish
-	<-make(chan bool)
+	// create context for workers
+	ctx := context.Background()
 
-	log.Println("Workers started successfully")
+	// Initialize Repositories by injecting db connection dependency
+	notificationRepo := repositories.NewNotificationRepository(dbConn)
+	notificationBatchRepo := repositories.NewNotificationBatchRepository(dbConn)
+	notificationBatchErrorRepo := repositories.NewNotificationBatchErrorRepo(dbConn)
+
+	// Initialize Services by injecting corresponding repository dependency
+	blkNotificationService := services.NewBulkNotificationService(notificationRepo, notificationBatchRepo, notificationBatchErrorRepo)
+
+	// Initialize workers by injecting dependencies
+	notificationBatchWorker := workers.NewNotificationBatchWorker(dbConn, rbmqConn, ctx, blkNotificationService)
+
+	// start workers by calling Consume method
+	notificationBatchWorker.Consume()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
