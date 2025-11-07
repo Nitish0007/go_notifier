@@ -1,10 +1,16 @@
-package utils
+package rabbitmq_utils
 
 import (
 	"encoding/json"
 	"log"
+	"time"
 
 	rbmq "github.com/rabbitmq/amqp091-go"
+)
+
+const (
+	MAX_RETRIES = 5
+	RETRY_DELAY = 1 * time.Minute
 )
 
 func failOnError(err error, msg string) {
@@ -28,7 +34,7 @@ func CreateChannel(conn *rbmq.Connection) (*rbmq.Channel, error) {
 func CreateQueue(ch *rbmq.Channel, queue_name string) (*rbmq.Queue, error) {
 	q, err := ch.QueueDeclare(
 		queue_name, // name
-		false,      // durable
+		true,      // durable
 		false,      // delete when unused
 		false,      // exclusive
 		false,      // no-wait
@@ -68,4 +74,30 @@ func PushToQueue(queue_name string, body map[string]any) error {
 	}
 
 	return nil
+}
+
+func ProcessMsgWithRetry(ch *rbmq.Channel, queue *rbmq.Queue, body map[string]any, ) error {
+	jsonBody, err := json.Marshal(body)
+	failOnError(err, "Error converting body to JSON")
+
+	msgs, err := ch.Consume(
+		queue.Name,
+		"",		// consumer tag
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+
+	if err != nil {
+		failOnError(err, "Failed to consume messages")
+		return err
+	}
+
+	return nil
+}
+
+func CalculateRetryDelay(retryNumber int) time.Duration {
+	return time.Duration(retryNumber) * RETRY_DELAY
 }
