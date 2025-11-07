@@ -8,17 +8,18 @@ import (
 	"github.com/Nitish0007/go_notifier/internal/notifiers"
 	"github.com/Nitish0007/go_notifier/internal/repositories"
 	"github.com/Nitish0007/go_notifier/utils"
+	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
 )
 
 func ConsumeEmailNotifications() {
-	conn := utils.ConnectMQ()
+	conn := rabbitmq_utils.ConnectMQ()
 	defer conn.Close()
 
-	ch, _ := utils.CreateChannel(conn)
+	ch, _ := rabbitmq_utils.CreateChannel(conn)
 	defer ch.Close()
 
 	queue_name := "emailer"
-	q, err := utils.CreateQueue(ch, queue_name)
+	q, err := rabbitmq_utils.CreateQueue(ch, queue_name)
 	if err != nil {
 		log.Printf("Error in worker: %v", err)
 		return

@@ -11,6 +11,7 @@ import (
 	"github.com/Nitish0007/go_notifier/internal/services"
 	"github.com/Nitish0007/go_notifier/internal/workers"
 	"github.com/Nitish0007/go_notifier/utils"
+	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 	}
 
 	// make RabbitMQ connection for workers
-	rbmqConn := utils.ConnectMQ()
+	rbmqConn := rabbitmq_utils.ConnectMQ()
 	defer rbmqConn.Close()
 
 	// create context for workers

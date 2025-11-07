@@ -10,6 +10,7 @@ import (
 	"github.com/Nitish0007/go_notifier/internal/notifiers"
 	"github.com/Nitish0007/go_notifier/internal/repositories"
 	"github.com/Nitish0007/go_notifier/utils"
+	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
 )
 
 type NotificationService struct {
@@ -76,7 +77,7 @@ func (s *NotificationService) SendOrScheduleNotification(ctx context.Context, n 
 			"notificationID": n.ID,
 			"accountID": utils.GetCurrentAccountID(ctx),
 		}
-		err := utils.PushToQueue("emailer", body)
+		err := rabbitmq_utils.PushToQueue("emailer", body)
 		if err != nil {
 			log.Printf("ERROR!!!: %v", err)
 			return err

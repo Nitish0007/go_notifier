@@ -10,6 +10,7 @@ import (
 	"github.com/Nitish0007/go_notifier/internal/models"
 	"github.com/Nitish0007/go_notifier/internal/repositories"
 	"github.com/Nitish0007/go_notifier/utils"
+	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
 )
 
 type BulkNotificationService struct {
@@ -64,7 +65,7 @@ func (s *BulkNotificationService) CreateBulkNotifications(ctx context.Context, d
 		"batch_id": batch.ID,
 		"account_id": utils.GetCurrentAccountID(ctx),
 	}
-	err = utils.PushToQueue("notification_batch", body)
+	err = rabbitmq_utils.PushToQueue("notification_batch", body)
 	if err != nil {
 		return nil, errors.New("failed to push batch to queue")
 	}

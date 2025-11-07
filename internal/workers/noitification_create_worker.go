@@ -6,8 +6,8 @@ import (
 	"context"
 
 	"github.com/Nitish0007/go_notifier/internal/services"
-	"github.com/Nitish0007/go_notifier/utils"
 	rbmq "github.com/rabbitmq/amqp091-go"
+	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
 	"gorm.io/gorm"
 )
 
@@ -25,14 +25,14 @@ type NotificationBatchWorker struct {
 }
 
 func NewNotificationBatchWorker(dbConn *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, blkNotificationService *services.BulkNotificationService) *NotificationBatchWorker {
-	channel, err := utils.CreateChannel(rbmqConn)
+	channel, err := rabbitmq_utils.CreateChannel(rbmqConn)
 	if err != nil {
 		log.Printf("Error creating channel: %v", err)
 		return nil
 	}
 	defer channel.Close()
 
-	queue, err := utils.CreateQueue(channel, NOTIFICATION_CREATE_QUEUE)
+	queue, err := rabbitmq_utils.CreateQueue(channel, NOTIFICATION_CREATE_QUEUE)
 	if err != nil {
 		log.Printf("Error creating queue: %v", err)
 		return nil
