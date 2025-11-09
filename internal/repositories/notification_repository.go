@@ -32,3 +32,47 @@ func (r *NotificationRepository) GetByID(ctx context.Context, id string, accID i
 	err := r.DB.WithContext(ctx).Where("id = ? AND account_id = ?", id, accID).First(&notification).Error
 	return &notification, err
 }
+
+func (r *NotificationRepository) GetNotificationsByChannel(ctx context.Context, ch string, accID int) ([]*models.Notification, error) {
+	var notifications []*models.Notification
+	channel, err := models.StringToNotificationChannel(ch)
+	if err != nil {
+		return nil, err
+	}
+
+	n := &models.Notification{
+		AccountID: accID,
+		Channel: channel,
+	}
+
+	// NOTE 
+	// When querying with struct, GORM will only query with non-zero fields, 
+	// that means if your field’s value is 0, '', false or other zero values, it won’t be used to build query conditions
+
+	// So pass accID as 0, when you want to fetch data irrespective of account_id
+	err = r.DB.WithContext(ctx).Where(n).Find(&notifications).Error
+	if err != nil {
+		return nil, err
+	}
+	return notifications, nil
+}
+
+func (r *NotificationRepository) GetNotificationsByStatus(ctx context.Context, st string, accID int) ([]*models.Notification, error) {
+	var notifications []*models.Notification
+	status, err := models.StringToNotificationStatus(st)
+	if err != nil {
+		return nil, err
+	}
+
+	n := &models.Notification{
+		AccountID: accID,
+		Status: status,
+	}
+
+	err = r.DB.WithContext(ctx).Where(n).Find(&notifications).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return notifications, nil
+}
