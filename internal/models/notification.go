@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 	"github.com/google/uuid"
@@ -103,4 +104,21 @@ func ChannelToString(channel NotificationChannel) (string, error) {
 	default:
 		return "", errors.New("unknown channel type")
 	}
+}
+
+// to convert notification struct to map[string]any
+func (n *Notification) ToMap() (map[string]any, error) {
+	// marshal struct to JSON
+	jsonBytes, err := json.Marshal(n)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Unmarshal JSON to ma[string]any
+	var result map[string]any
+	if err := json.Unmarshal(jsonBytes, &result); err != nil {
+		return nil, err
+	}
+	
+	return result, nil
 }

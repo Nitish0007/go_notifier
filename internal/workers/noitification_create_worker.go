@@ -1,47 +1,41 @@
 package workers
 
 import (
-	"encoding/json"
 	"log"
 	"context"
+	"encoding/json"
+	"time"
 
-	"github.com/Nitish0007/go_notifier/internal/services"
-	rbmq "github.com/rabbitmq/amqp091-go"
-	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
 	"gorm.io/gorm"
+	rbmq "github.com/rabbitmq/amqp091-go"
+	"github.com/Nitish0007/go_notifier/internal/services"
+	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
 )
 
-const (
-	NOTIFICATION_CREATE_QUEUE = "notification_batch"
+var (
+	batchQueueName = "notification_batch"
+	maxRetries = 5
+	retryDelay = 1 * time.Minute
 )
 
 type NotificationBatchWorker struct {
 	dbConn *gorm.DB
 	rbmqConn *rbmq.Connection
-	channel *rbmq.Channel
-	queue *rbmq.Queue
+	queue *rabbitmq_utils.Queue
 	ctx context.Context
 	blkNotificationService *services.BulkNotificationService
 }
 
 func NewNotificationBatchWorker(dbConn *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, blkNotificationService *services.BulkNotificationService) *NotificationBatchWorker {
-	channel, err := rabbitmq_utils.CreateChannel(rbmqConn)
-	if err != nil {
-		log.Printf("Error creating channel: %v", err)
-		return nil
-	}
-	defer channel.Close()
-
-	queue, err := rabbitmq_utils.CreateQueue(channel, NOTIFICATION_CREATE_QUEUE)
+	queue, err := rabbitmq_utils.NewQueue(batchQueueName)
 	if err != nil {
 		log.Printf("Error creating queue: %v", err)
 		return nil
 	}
-
+	
 	return &NotificationBatchWorker{
 		dbConn: dbConn,
 		rbmqConn: rbmqConn,
-		channel: channel,
 		queue: queue,
 		ctx: ctx,
 		blkNotificationService: blkNotificationService,
@@ -49,35 +43,53 @@ func NewNotificationBatchWorker(dbConn *gorm.DB, rbmqConn *rbmq.Connection, ctx 
 }
 
 func (w *NotificationBatchWorker) Consume() {
-	msgs, err := w.channel.Consume(w.queue.Name, "", true, false, false, false, nil)
+	ch, err := rabbitmq_utils.CreateChannel(w.rbmqConn)
 	if err != nil {
-		log.Printf("Error in worker: %v", err)
+		log.Printf("Error creating channel: %v", err)
+		return
+	}
+	defer ch.Close()
+	
+	msgs, err := ch.Consume(w.queue.Main.Name, "", true, false, false, false, nil)
+	if err != nil {
+		log.Printf("Error in consuming messages: %v", err)
 		return
 	}
 
-	log.Println("[*] Waiting for Job in queue. Press Ctrl+C to exit")
-
 	forever := make(chan bool)
+
 	go func() {
-		log.Println("Goroutine started, waiting for messages...")
-		for d := range msgs {
-			log.Printf("======>> message : %v", d)
+		for msg := range msgs {
 			var body map[string]any
-			err := json.Unmarshal(d.Body, &body)
+			err := json.Unmarshal(msg.Body, &body)
 			if err != nil {
 				log.Printf("Error in unmarshalling body: %v", err)
+				msg.Ack(false)
+				w.queue.PushToDLQ(body)
 				continue
 			}
 
-			err = w.blkNotificationService.ProcessBatch(w.ctx, body["batch_id"].(string))
-			if err != nil {
-				log.Printf("Error in processing batch: %v", err)
+
+			batchID, ok := body["batch_id"].(string)
+			if !ok {
+				log.Printf("Batch ID is not a string: %v", body["batch_id"])
+				w.queue.PushToDLQ(body)
 				continue
 			}
-			log.Printf("Batch processed successfully: %v", body["batch_id"])
-			d.Ack(false)
+
+			for retryCount := 1; retryCount <= maxRetries; retryCount++ {
+				err = w.blkNotificationService.ProcessBatch(w.ctx, batchID)
+				if err != nil {
+					log.Printf("Error in processing batch: %v", err)
+					w.queue.PushToRetry(body)
+					continue
+				}
+				time.Sleep(retryDelay)
+			}
+			w.queue.PushToDLQ(body)
+			continue
 		}
 	}()
-
+		
 	<-forever
 }

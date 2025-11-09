@@ -41,9 +41,11 @@ func main() {
 
 	// Initialize workers by injecting dependencies
 	notificationBatchWorker := workers.NewNotificationBatchWorker(dbConn, rbmqConn, ctx, blkNotificationService)
+	schedulerWorker := workers.NewNotificationSchedulerWorker(dbConn, rbmqConn, ctx, blkNotificationService)
 
 	// start workers by calling Consume method
 	notificationBatchWorker.Consume()
+	schedulerWorker.Consume()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
