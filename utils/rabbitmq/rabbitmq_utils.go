@@ -96,52 +96,6 @@ func PushToQueue(queue_name string, body map[string]any) error {
 	return nil
 }
 
-// func ProcessMsgWithRetry(ch *rbmq.Channel, queue *rbmq.Queue, funcToExecute func(context.Context, map[string]any) error) error {
-// 	msgs, err := ch.Consume(
-// 		queue.Name,
-// 		"",		// consumer tag
-// 		true,
-// 		false,
-// 		false,
-// 		false,
-// 		nil,
-// 	)
-
-// 	if err != nil {
-// 		failOnError(err, "Failed to consume messages")
-// 		return err
-// 	}
-
-// 	ctx := context.Background()
-
-// 	for retryCount := 1; retryCount <= MAX_RETRIES; retryCount++ {
-// 		select {
-// 		case msg := <-msgs:
-// 			var body map[string]any
-// 			err = json.Unmarshal(msg.Body, &body)
-			
-// 			if err != nil {
-// 				log.Printf("Error unmarshalling body: %v", err)
-// 				msg.Ack(false)
-// 				continue
-// 			}
-
-// 			err = funcToExecute(ctx, body)
-// 			if err == nil {
-// 				msg.Ack(false)
-// 				return nil
-// 			}
-// 			log.Printf("Error executing function: %v", err)
-// 			time.Sleep(CalculateRetryDelay(retryCount))
-// 		default:
-// 			log.Printf("No message received after %d retries", MAX_RETRIES)
-// 			return nil
-// 		}
-// 	}
-
-// 	return nil
-// }
-
 func CalculateRetryDelay(retryNumber int) time.Duration {
 	return time.Duration(retryNumber) * RETRY_DELAY
 }
