@@ -1,9 +1,11 @@
+// This worker will pick notifications that have status pending and does not have a key in redis, which means the notification is not yet scheduled to be sent
 package workers
 
 import (
 	"context"
 	"log"
 
+	"github.com/Nitish0007/go_notifier/internal/models"
 	"github.com/Nitish0007/go_notifier/internal/repositories"
 	"github.com/Nitish0007/go_notifier/internal/services"
 	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
@@ -41,9 +43,14 @@ func NewNotificationSchedulerWorker(db *gorm.DB, rbmqConn *rbmq.Connection, ctx 
 func (w *NotificationSchedulerWorker) Consume() {
 	forever := make(chan bool)
 	repo := repositories.NewNotificationRepository(w.dbConn)
-	notifications, err := repo.GetNotificationsByStatus(w.ctx, "pending", 0)
+	n := &models.Notification{
+		AccountID: 0,
+		Status: models.Pending,
+	}
+	
+	notifications, err := repo.GetNotificationsByObject(w.ctx, n)
 	if err != nil {
-		log.Printf("Error fetcing notifications: %v", err)
+		log.Printf("Error Fetching notifications: %v", err)
 		return
 	}
 
@@ -58,6 +65,15 @@ func (w *NotificationSchedulerWorker) Consume() {
 			// push to queue
 			if err := rabbitmq_utils.PushToQueue(w.queue.Main.Name, body); err != nil {
 				log.Printf("Error pushing to queue: %v", err)
+				continue
+			}
+
+			fieldsToUpdate := map[string]any {
+				"status": models.Enqueued,
+			}
+			_, err = repo.UpdateNotification(w.ctx, fieldsToUpdate, n)
+			if err != nil {
+				log.Printf("Error updating notification: %v", err)
 				continue
 			}
 		}

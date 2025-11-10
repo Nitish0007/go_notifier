@@ -33,46 +33,69 @@ func (r *NotificationRepository) GetByID(ctx context.Context, id string, accID i
 	return &notification, err
 }
 
-func (r *NotificationRepository) GetNotificationsByChannel(ctx context.Context, ch string, accID int) ([]*models.Notification, error) {
+func (r *NotificationRepository) GetNotificationsByChannel(ctx context.Context, ch models.NotificationChannel, accID int) ([]*models.Notification, error) {
 	var notifications []*models.Notification
-	channel, err := models.StringToNotificationChannel(ch)
-	if err != nil {
-		return nil, err
-	}
 
 	n := &models.Notification{
 		AccountID: accID,
-		Channel: channel,
+		Channel:   ch,
 	}
 
-	// NOTE 
-	// When querying with struct, GORM will only query with non-zero fields, 
+	// NOTE
+	// When querying with struct, GORM will only query with non-zero fields,
 	// that means if your field’s value is 0, '', false or other zero values, it won’t be used to build query conditions
 
 	// So pass accID as 0, when you want to fetch data irrespective of account_id
-	err = r.DB.WithContext(ctx).Where(n).Find(&notifications).Error
+	err := r.DB.WithContext(ctx).Where(n).Find(&notifications).Error
 	if err != nil {
 		return nil, err
 	}
 	return notifications, nil
 }
 
-func (r *NotificationRepository) GetNotificationsByStatus(ctx context.Context, st string, accID int) ([]*models.Notification, error) {
+func (r *NotificationRepository) GetNotificationsByStatus(ctx context.Context, st models.NotificationStatus, accID int) ([]*models.Notification, error) {
 	var notifications []*models.Notification
-	status, err := models.StringToNotificationStatus(st)
-	if err != nil {
-		return nil, err
-	}
 
 	n := &models.Notification{
 		AccountID: accID,
-		Status: status,
+		Status:    st,
 	}
 
-	err = r.DB.WithContext(ctx).Where(n).Find(&notifications).Error
+	err := r.DB.WithContext(ctx).Where(n).Find(&notifications).Error
 	if err != nil {
 		return nil, err
 	}
 
 	return notifications, nil
+}
+
+func (r *NotificationRepository) GetNotificationsByObject(ctx context.Context, n *models.Notification) ([]*models.Notification, error) {
+	var notifications []*models.Notification
+	err := r.DB.WithContext(ctx).Where(n).Find(&notifications).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return notifications, err
+}
+
+func (r *NotificationRepository) UpdateNotification(ctx context.Context, fieldsToUpdate map[string]any, nObj *models.Notification) (*models.Notification, error) {
+	var udpatedNotification models.Notification
+	result := r.DB.WithContext(ctx).Model(&models.Notification{}).Where(nObj).Updates(fieldsToUpdate)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	// fetch updated record
+	err := r.DB.WithContext(ctx).Where(nObj).First(&udpatedNotification).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &udpatedNotification, nil
 }

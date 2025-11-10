@@ -1,3 +1,5 @@
+// This Worker processes the messages added to 'notification_batch' queue when a batch is created via API
+// This will pick the message from queue to fetch batchID, then validate the payload and create notifications for valid payloads and create notification batchError for invalid ones
 package workers
 
 import (
@@ -49,7 +51,7 @@ func (w *NotificationBatchWorker) Consume() {
 		return
 	}
 	defer ch.Close()
-	
+
 	msgs, err := ch.Consume(w.queue.Main.Name, "", true, false, false, false, nil)
 	if err != nil {
 		log.Printf("Error in consuming messages: %v", err)
