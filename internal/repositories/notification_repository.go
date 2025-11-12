@@ -69,9 +69,9 @@ func (r *NotificationRepository) GetNotificationsByStatus(ctx context.Context, s
 	return notifications, nil
 }
 
-func (r *NotificationRepository) GetNotificationsByObject(ctx context.Context, n *models.Notification) ([]*models.Notification, error) {
+func (r *NotificationRepository) GetNotificationsByObject(ctx context.Context, n *models.Notification, limit int) ([]*models.Notification, error) {
 	var notifications []*models.Notification
-	err := r.DB.WithContext(ctx).Where(n).Find(&notifications).Error
+	err := r.DB.WithContext(ctx).Where(n).Limit(limit).Find(&notifications).Error
 	if err != nil {
 		return nil, err
 	}

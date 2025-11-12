@@ -4,6 +4,7 @@ package workers
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/Nitish0007/go_notifier/internal/models"
 	"github.com/Nitish0007/go_notifier/internal/repositories"
@@ -22,7 +23,6 @@ type NotificationSchedulerWorker struct {
 	rbmqConn               *rbmq.Connection
 	queue                  *rabbitmq_utils.Queue
 	ctx                    context.Context
-	blkNotificationService *services.BulkNotificationService
 }
 
 func NewNotificationSchedulerWorker(db *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, s *services.BulkNotificationService) *NotificationSchedulerWorker {
@@ -36,7 +36,6 @@ func NewNotificationSchedulerWorker(db *gorm.DB, rbmqConn *rbmq.Connection, ctx 
 		rbmqConn:               rbmqConn,
 		queue:                  q,
 		ctx:                    ctx,
-		blkNotificationService: s,
 	}
 }
 
@@ -48,7 +47,8 @@ func (w *NotificationSchedulerWorker) Consume() {
 		Status: models.Pending,
 	}
 	
-	notifications, err := repo.GetNotificationsByObject(w.ctx, n)
+	// enqueue 500 notifications at a time to avoid overwhelming the queue
+	notifications, err := repo.GetNotificationsByObject(w.ctx, n, 500)
 	if err != nil {
 		log.Printf("Error Fetching notifications: %v", err)
 		return
@@ -63,7 +63,7 @@ func (w *NotificationSchedulerWorker) Consume() {
 			}
 
 			// push to queue
-			if err := rabbitmq_utils.PushToQueue(w.queue.Main.Name, body); err != nil {
+			if err := rabbitmq_utils.PushToQueue(w.queue.Main.Name, map[string]any{"notificationID": body["ID"], "accountID": body["AccountID"]}); err != nil {
 				log.Printf("Error pushing to queue: %v", err)
 				continue
 			}
@@ -77,6 +77,7 @@ func (w *NotificationSchedulerWorker) Consume() {
 				continue
 			}
 		}
+		time.Sleep(30 * time.Second) // sleep for 30 seconds to avoid overwhelming the queue
 	}()
 	<-forever
 }

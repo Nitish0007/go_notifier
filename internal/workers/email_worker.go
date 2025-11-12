@@ -2,68 +2,93 @@ package workers
 
 import (
 	"log"
-
+	"context"
 	"encoding/json"
 
-	"github.com/Nitish0007/go_notifier/internal/notifiers"
-	"github.com/Nitish0007/go_notifier/internal/repositories"
-	"github.com/Nitish0007/go_notifier/utils"
+	"gorm.io/gorm"
+	rbmq "github.com/rabbitmq/amqp091-go"
+	"github.com/Nitish0007/go_notifier/internal/services"
 	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
 )
 
-func ConsumeEmailNotifications() {
-	conn := rabbitmq_utils.ConnectMQ()
-	defer conn.Close()
+var (
+	notificationDeliveryQueueName = "notification_delivery"
+)
 
-	ch, _ := rabbitmq_utils.CreateChannel(conn)
+type EmailWorker struct {
+	dbConn *gorm.DB
+	rbmqConn *rbmq.Connection
+	ctx context.Context
+	queue *rabbitmq_utils.Queue
+	notificationService *services.NotificationService
+}
+
+func NewEmailWorker(dbConn *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, queue *rabbitmq_utils.Queue, notificationService *services.NotificationService) *EmailWorker {
+	q, err := rabbitmq_utils.NewQueue(notificationDeliveryQueueName)
+	if err != nil {
+		return nil
+	}
+	return &EmailWorker{
+		dbConn: dbConn,
+		rbmqConn: rbmqConn,
+		ctx: ctx,
+		queue: q,
+		notificationService: notificationService,
+	}
+}
+
+
+func (w *EmailWorker) Consume() {
+	forever := make(chan bool)
+	ch, err := rabbitmq_utils.CreateChannel(w.rbmqConn)
+	if err != nil {
+		log.Printf("Error creating channel: %v", err)
+		return
+	}
 	defer ch.Close()
 
-	queue_name := "emailer"
-	q, err := rabbitmq_utils.CreateQueue(ch, queue_name)
+	msgs, err := ch.Consume(w.queue.Main.Name, "", true, false, false, false, nil)
 	if err != nil {
-		log.Printf("Error in worker: %v", err)
+		log.Printf("Error in consuming messages: %v", err)
 		return
 	}
 
-	msgs, err := ch.Consume(
-		q.Name,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		log.Printf("Error in worker: %v", err)
-		return
-	}
-
-	log.Println("[*] Waiting for Job in queue. Press Ctrl+C to exit")
-
-	dbConn, err := utils.ConnectDB()
-	if err != nil {
-		log.Printf("Error in db connection: %v", err)
-		return
-	}
-	notificationRepo := repositories.NewNotificationRepository(dbConn)
-	emailNotifier := notifiers.NewEmailNotifier(notificationRepo)
-	forever := make(chan bool)
 	go func() {
-		for d := range msgs {
+		for msg := range msgs {
 			var body map[string]any
-			err := json.Unmarshal(d.Body, &body)
+			err := json.Unmarshal(msg.Body, &body)
 			if err != nil {
-				log.Printf("Unable to decode json: %v", err)
+				log.Printf("Error in unmarshalling body: %v", err)
+				msg.Ack(false)
+				w.queue.PushToDLQ(body)
 				continue
 			}
 
-			err = emailNotifier.Send(body)
-			if err != nil {
-				log.Printf("Error sending email: %v", err)
+			notificationID, ok := body["notificationID"].(string)
+			if !ok {
+				log.Printf("Notification ID is not a string: %v", body["notificationID"])
+				w.queue.PushToDLQ(body)
+				continue
 			}
+
+			accountID, ok := body["accountID"].(int)
+			if !ok {
+				log.Printf("Account ID is not an integer: %v", body["accountID"])
+				w.queue.PushToDLQ(body)
+				continue
+			}
+
+
+			err = w.notificationService.SendNotification(w.ctx, notificationID, accountID)
+			if err != nil {
+				log.Printf("Error in sending notification: %v", err)
+				w.queue.PushToRetry(body)
+				continue
+			}
+
+			msg.Ack(false)
+			continue
 		}
 	}()
-
 	<-forever
 }

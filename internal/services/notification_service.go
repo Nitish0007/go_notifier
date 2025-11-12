@@ -85,3 +85,49 @@ func (s *NotificationService) SendOrScheduleNotification(ctx context.Context, n 
 	}
 	return nil
 }
+
+func (s *NotificationService) SendNotification(ctx context.Context, notificationID string, accountID int) error {
+	notification, err := s.notificationRepo.GetByID(ctx, notificationID, accountID)
+	if err != nil {
+		log.Printf("Error in getting notification: %v", err)
+		return err
+	}
+
+	if notification == nil {
+		return errors.New("notification not found")
+	}
+
+	channelString, err := models.ChannelToString(notification.Channel)
+	if err != nil {
+		log.Printf("Error in getting channel string: %v", err)
+		return err
+	}
+	notifier := s.notifiers[channelString]
+	if notifier == nil {
+		return errors.New("no notifier allocated for channel type: " + channelString)
+	}
+
+	body, err := notification.ToMap()
+	if err != nil {
+		log.Printf("Error in converting notification to map: %v", err)
+		return err
+	}
+
+	err = notifier.Send(body)
+	if err != nil {
+		log.Printf("Error in sending notification: %v", err)
+		return err
+	}
+
+	fieldsToUpdate := map[string]any {
+		"status": models.Sent,
+		"sent_at": time.Now(),
+		"error_message": nil,
+	}
+	_, err = s.notificationRepo.UpdateNotification(ctx, fieldsToUpdate, notification)
+	if err != nil {
+		log.Printf("Error in updating notification: %v", err)
+		return err
+	}
+	return nil
+}
