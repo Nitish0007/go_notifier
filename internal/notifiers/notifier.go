@@ -7,7 +7,7 @@ import (
 )
 
 type Notifier interface {
-	Send(body map[string]any) error
+	Send(notification *models.Notification) error
 	ChannelType() string
 	CreateNotification(ctx context.Context, payload map[string]any) (*models.Notification, error)
 	CreateBulkNotifications(ctx context.Context, payload []map[string]any) ([]*models.Notification, error)

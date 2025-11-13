@@ -87,7 +87,6 @@ func (w *EmailWorker) Consume() {
 			}
 
 			msg.Ack(false)
-			continue
 		}
 	}()
 	<-forever

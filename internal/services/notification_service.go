@@ -107,13 +107,7 @@ func (s *NotificationService) SendNotification(ctx context.Context, notification
 		return errors.New("no notifier allocated for channel type: " + channelString)
 	}
 
-	body, err := notification.ToMap()
-	if err != nil {
-		log.Printf("Error in converting notification to map: %v", err)
-		return err
-	}
-
-	err = notifier.Send(body)
+	err = notifier.Send(notification)
 	if err != nil {
 		log.Printf("Error in sending notification: %v", err)
 		return err
