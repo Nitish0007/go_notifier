@@ -14,10 +14,12 @@ type EmailNotifier struct {
 };
 
 func NewEmailNotifier(r *repositories.NotificationRepository) *EmailNotifier {
-	return &EmailNotifier{notificationRepository: r}
+	return &EmailNotifier{
+		notificationRepository: r,
+	}
 }
 
-func (n *EmailNotifier) Send(body map[string]any) error {
+func (n *EmailNotifier) Send(notification *models.Notification) error {
 	
 	return nil
 }
