@@ -23,12 +23,14 @@ func InititalizeApplication(db *gorm.DB, router *chi.Mux) {
 	notificationRepo := repositories.NewNotificationRepository(db)
 	notificationBatchRepo := repositories.NewNotificationBatchRepository(db)
 	notificationBatchErrorRepo := repositories.NewNotificationBatchErrorRepo(db)
+	configurationRepo := repositories.NewConfigurationRepository(db)
 
 	// intialize notifiers
 	emailNotifier := notifiers.NewEmailNotifier(notificationRepo)
 
 	// Initialize Services by injecting corresponding repository dependency
 	accService := services.NewAccountService(accRepo, apiKeyRepo)
+	configurationService := services.NewConfigurationService(configurationRepo)
 	notificationService := services.NewNotificationService(
 		[]notifiers.Notifier{emailNotifier},
 		notificationRepo,
@@ -38,6 +40,7 @@ func InititalizeApplication(db *gorm.DB, router *chi.Mux) {
 	// Initialize Handlers by injecting corresponding service dependency
 	accountHandler := handlers.NewAccountHandler(accService)
 	notificationHandler := handlers.NewNotificationHandler(notificationService)
+	configurationHandler := handlers.NewConfigurationHandler(configurationService)
 	bulkNotificationHandler := handlers.NewBulkNotificationHandler(bulkNotificationService)
 	// Register Routes by injecting corresponding handler dependency
 	router.Route("/api/v1", func(r chi.Router) {
@@ -50,6 +53,7 @@ func InititalizeApplication(db *gorm.DB, router *chi.Mux) {
 			routes.RegisterAccountRoutes(db, authenticated, accountHandler)
 			routes.RegisterNotificationRoutes(db, authenticated, notificationHandler)
 			routes.RegisterBulkNotificationRoutes(db, authenticated, bulkNotificationHandler)
+			routes.RegisterConfigurationRoutes(db, authenticated, configurationHandler)
 		})
 	})
 }

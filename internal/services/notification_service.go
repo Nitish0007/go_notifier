@@ -86,7 +86,7 @@ func (s *NotificationService) SendOrScheduleNotification(ctx context.Context, n 
 	return nil
 }
 
-func (s *NotificationService) SendNotification(ctx context.Context, notificationID string, accountID int) error {
+func (s *NotificationService) SendNotification(ctx context.Context, notificationID string, accountID int, smtpConfig *models.SMTPConfiguration) error {
 	notification, err := s.notificationRepo.GetByID(ctx, notificationID, accountID)
 	if err != nil {
 		log.Printf("Error in getting notification: %v", err)
@@ -107,7 +107,7 @@ func (s *NotificationService) SendNotification(ctx context.Context, notification
 		return errors.New("no notifier allocated for channel type: " + channelString)
 	}
 
-	err = notifier.Send(notification)
+	err = notifier.Send(notification, smtpConfig)
 	if err != nil {
 		log.Printf("Error in sending notification: %v", err)
 		return err
