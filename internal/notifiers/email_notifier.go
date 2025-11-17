@@ -19,8 +19,20 @@ func NewEmailNotifier(r *repositories.NotificationRepository) *EmailNotifier {
 	}
 }
 
-func (n *EmailNotifier) Send(notification *models.Notification) error {
-	
+func (n *EmailNotifier) Send(notification *models.Notification, smtpConfig *models.SMTPConfiguration) error {
+	from := notification.Metadata["from_email"].(string)
+	fromName := notification.Metadata["from_name"].(string)
+	to := notification.Recipient
+	toName := notification.Metadata["to_name"].(string)
+	replyToEmail := notification.Metadata["reply_to_email"].(string)
+	replyToName := notification.Metadata["reply_to_name"].(string)
+	subject := notification.Subject
+	body := notification.Body
+	htmlBody := notification.HtmlBody
+	err := utils.SendEmail(to, from, fromName, toName, replyToEmail, replyToName, subject, body, htmlBody, smtpConfig)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

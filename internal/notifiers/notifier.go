@@ -7,7 +7,8 @@ import (
 )
 
 type Notifier interface {
-	Send(notification *models.Notification) error
+	// here cnoifguration must be generic and should be able to handle any configuration
+	Send(notification *models.Notification, smtpConfig *models.SMTPConfiguration) error
 	ChannelType() string
 	CreateNotification(ctx context.Context, payload map[string]any) (*models.Notification, error)
 	CreateBulkNotifications(ctx context.Context, payload []map[string]any) ([]*models.Notification, error)
