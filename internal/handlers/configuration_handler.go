@@ -38,7 +38,7 @@ func (h *ConfigurationHandler) CreateConfigurationHandler(w http.ResponseWriter,
 	
 	configData, exists := payload["configuration"].(map[string]any)
 	if !exists || len(configData) == 0 {
-		utils.WriteErrorResponse(w, http.StatusBadRequest, "Configuration data is required")
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Configuration payload is required")
 		return
 	}
 
