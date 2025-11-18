@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/Nitish0007/go_notifier/internal/repositories"
 	"github.com/Nitish0007/go_notifier/internal/models"
-	"github.com/Nitish0007/go_notifier/utils"
+	// "github.com/Nitish0007/go_notifier/utils"
 )
 
 type ConfigurationService struct {
@@ -30,7 +30,6 @@ func (s *ConfigurationService) CreateConfiguration(ctx context.Context, configDa
 	if err != nil {
 		return nil, err
 	}
-	config.AccountID = utils.GetCurrentAccountID(ctx)
 	err = s.configurationRepo.Create(ctx, config)
 	if err != nil {
 		return nil, err
