@@ -3,8 +3,10 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/Nitish0007/go_notifier/utils"
+	"github.com/Nitish0007/go_notifier/internal/models"
 	"github.com/Nitish0007/go_notifier/internal/services"
+	"github.com/Nitish0007/go_notifier/internal/validators"
+	"github.com/Nitish0007/go_notifier/utils"
 )
 
 type AccountHandler struct {
@@ -32,10 +34,17 @@ func (h *AccountHandler) CreateAccountHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// Initialize account with the provided data
+	// Initialize account with the provided data (handles password hashing, etc.)
 	ctx := r.Context()
 	account, err := h.accountService.InitializeAccount(ctx, accountData)
 	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Validate the initialized account struct using the generic validator
+	validator := validators.NewModelValidator[models.Account]()
+	if err := validator.ValidateStruct(account); err != nil {
 		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
