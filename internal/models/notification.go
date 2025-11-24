@@ -18,28 +18,28 @@ const (
 )
 
 const (
-	Pending	NotificationStatus = iota
+	Pending NotificationStatus = iota
 	Enqueued
 	Sent
 	failed
 )
 
 type Notification struct {
-	ID           string               `json:"id" gorm:"type:uuid;primaryKey;"`
-	AccountID    int                  `json:"account_id" gorm:"not null;index"`
-	Channel      NotificationChannel  `json:"channel" gorm:"not null;check:channel IN (0,1,2)"`
-	Recipient    string               `json:"recipient" gorm:"not null;size:255"`
-	Subject      string               `json:"subject" gorm:"size:500"`
-	Body         string               `json:"body" gorm:"type:text"`
-	HtmlBody     string               `json:"html_body" gorm:"type:text"`
-	Status       NotificationStatus   `json:"status" gorm:"not null;default:0;check:status IN (0,1,2,3)"`
-	Metadata     map[string]any       `json:"metadata" gorm:"type:jsonb; default:'{}'; serializer:json"`
-	ErrorMessage *string              `json:"error_message" gorm:"type:text"`
-	JobID        *string              `json:"job_id" gorm:"type:uuid"`
-	SendAt       *time.Time           `json:"send_at"`
-	SentAt       *time.Time           `json:"sent_at"`
-	CreatedAt    time.Time            `json:"created_at" gorm:"autoCreateTime"`
-	BatchID      *string              `json:"batch_id" gorm:"type:uuid;index"`
+	ID           string              `json:"id" gorm:"type:uuid;primaryKey;" validate:"omitempty,uuid"`
+	AccountID    int                 `json:"account_id" gorm:"not null;index" validate:"required,gt=0"`
+	Channel      NotificationChannel `json:"channel" gorm:"not null;check:channel IN (0,1,2)" validate:"required"` // Custom validation needed for enum
+	Recipient    string              `json:"recipient" gorm:"not null;size:255" validate:"required,min=1,max=255"`
+	Subject      string              `json:"subject" gorm:"size:500" validate:"omitempty,max=500"`
+	Body         string              `json:"body" gorm:"type:text" validate:"omitempty"`
+	HtmlBody     string              `json:"html_body" gorm:"type:text" validate:"omitempty"`
+	Status       NotificationStatus  `json:"status" gorm:"not null;default:0;check:status IN (0,1,2,3)" validate:"-"` // Custom validation needed for enum
+	Metadata     map[string]any      `json:"metadata" gorm:"type:jsonb; default:'{}'; serializer:json" validate:"-"`
+	ErrorMessage *string             `json:"error_message" gorm:"type:text" validate:"-"`
+	JobID        *string             `json:"job_id" gorm:"type:uuid" validate:"omitempty,uuid"`
+	SendAt       *time.Time          `json:"send_at" validate:"-"`
+	SentAt       *time.Time          `json:"sent_at" validate:"-"`
+	CreatedAt    time.Time           `json:"created_at" gorm:"autoCreateTime" validate:"-"`
+	BatchID      *string             `json:"batch_id" gorm:"type:uuid;index" validate:"omitempty,uuid"`
 }
 
 // Before Create hook to generate UUID
@@ -65,7 +65,7 @@ func StringToNotificationStatus(status string) (NotificationStatus, error) {
 	}
 }
 
-func StatusToString(status NotificationStatus) (string, error ){
+func StatusToString(status NotificationStatus) (string, error) {
 	switch status {
 	case Pending:
 		return "pending", nil
@@ -113,12 +113,12 @@ func (n *Notification) ToMap() (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Unmarshal JSON to ma[string]any
 	var result map[string]any
 	if err := json.Unmarshal(jsonBytes, &result); err != nil {
 		return nil, err
 	}
-	
+
 	return result, nil
 }
