@@ -8,7 +8,7 @@ import (
 	"github.com/Nitish0007/go_notifier/utils"
 )
 
-type NotificationHandler struct{
+type NotificationHandler struct {
 	notificationService *services.NotificationService
 }
 
@@ -20,7 +20,7 @@ func NewNotificationHandler(s *services.NotificationService) *NotificationHandle
 
 // create and schedule notification
 func (h *NotificationHandler) SendNotificationHandler(w http.ResponseWriter, r *http.Request) {
-	
+
 	payload, err := utils.ParseJSONBody(r)
 
 	if err != nil {
@@ -49,7 +49,7 @@ func (h *NotificationHandler) SendNotificationHandler(w http.ResponseWriter, r *
 		return
 	}
 
-	utils.WriteJSONResponse(w, http.StatusOK, nil ,"Notification enqueued successfully")
+	utils.WriteJSONResponse(w, http.StatusOK, nil, "Notification enqueued successfully")
 }
 
 // create single notification
@@ -59,13 +59,13 @@ func (h *NotificationHandler) CreateNotificationHandler(w http.ResponseWriter, r
 		utils.WriteErrorResponse(w, http.StatusBadRequest, "Unable to parse payload")
 		return
 	}
-	
+
 	notificationData, exists := payload["notification"].(map[string]any)
 	if !exists {
 		utils.WriteErrorResponse(w, http.StatusBadRequest, "Notification data is required")
 		return
 	}
-	
+
 	ctx := r.Context()
 	n, err := h.notificationService.CreateNotification(ctx, notificationData)
 	if err != nil {
@@ -112,7 +112,7 @@ func (h *NotificationHandler) SendNotificationByIDHandler(w http.ResponseWriter,
 		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, "not able to fetch notification")
 		return
 	}
-	
+
 	err = h.notificationService.SendOrScheduleNotification(ctx, n)
 	if err != nil {
 		log.Printf("ERROR!: %v", err)

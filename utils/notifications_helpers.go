@@ -17,13 +17,13 @@ func ValidateNotificationPayload(payload map[string]any) (map[string]any, error)
 		return nil, errors.New("invalid channel type provided")
 	}
 
-	if recipient, exists := payload["to"].(string); !exists || recipient == "" {
-		return nil, errors.New("'to' field is required in notification payload")
+	if recipient, exists := payload["recipient"].(string); !exists || recipient == "" {
+		return nil, errors.New("'recipient' field is required in notification payload")
 	}
 
 	// only validated email format for now
 	// TODO: add validations for other channels recipient formats
-	if notificationType == "email" && !ValidateEmail(payload["to"].(string)) {
+	if notificationType == "email" && !ValidateEmail(payload["recipient"].(string)) {
 		return nil, errors.New("recipient is invalid email format")
 	}
 
