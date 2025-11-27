@@ -61,7 +61,7 @@ func (n *EmailNotifier) CreateNotification(ctx context.Context, payload map[stri
 		return nil, err
 	}
 	notification.Status = nStatus
-	notification.Recipient = payload["to"].(string)
+	notification.Recipient = payload["recipient"].(string)
 	notification.Body = payload["body"].(string)
 	notification.HtmlBody = payload["html_body"].(string)
 	sendTime := payload["send_at"]
