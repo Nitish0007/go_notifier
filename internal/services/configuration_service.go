@@ -37,14 +37,18 @@ func (s *ConfigurationService) CreateConfiguration(ctx context.Context, configDa
 	return config, nil
 }
 
-// func (s *ConfigurationService) UpdateConfiguration(ctx context.Context, configData map[string]any) (*models.Configuration, error) {
-// 	config, err := models.NewConfiguration(configData)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	config.ID = configData["id"].(int)
-// 	if err := s.configurationRepo.Update(ctx, config); err != nil {
-// 		return nil, err
-// 	}
-// 	return config, nil	
-// }
+func (s *ConfigurationService) DeleteConfiguration(ctx context.Context, accID int, cid int) error {
+	return s.configurationRepo.Delete(ctx, cid)
+}
+
+func (s *ConfigurationService) UpdateConfiguration(ctx context.Context, configData map[string]any) (*models.Configuration, error) {
+	config, err := models.NewConfiguration(configData)
+	if err != nil {
+		return nil, err
+	}
+	err = s.configurationRepo.Update(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+	return config, nil
+}

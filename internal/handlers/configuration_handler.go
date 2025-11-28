@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
+	"fmt"
 
 	"github.com/Nitish0007/go_notifier/internal/models"
 	"github.com/Nitish0007/go_notifier/internal/services"
@@ -68,24 +70,77 @@ func (h *ConfigurationHandler) CreateConfigurationHandler(w http.ResponseWriter,
 	utils.WriteJSONResponse(w, http.StatusCreated, createdConfig, "Configuration created successfully")
 }
 
-// func (h *ConfigurationHandler) UpdateConfigurationHandler(w http.ResponseWriter, r *http.Request) {
-// 	payload, err := utils.ParseJSONBody(r)
-// 	if err != nil {
-// 		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-// 		return
-// 	}
+func (h *ConfigurationHandler) DeleteConfigurationHandler(w http.ResponseWriter, r *http.Request) {
+	confID, err := utils.GetPathParam(r, "id")
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
-// 	configData, exists := payload["configuration"].(map[string]any)
-// 	if !exists || len(configData) == 0 {
-// 		utils.WriteErrorResponse(w, http.StatusBadRequest, "Configuration data can't be blank")
-// 		return
-// 	}
+	ctx := r.Context()
+	accID := utils.GetCurrentAccountID(ctx)
+	if accID == -1 {
+		utils.WriteErrorResponse(w, http.StatusUnauthorized, "Unkown account ID")
+		return
+	}
 
-// 	ctx := r.Context()
-// 	config, err := h.configurationService.UpdateConfiguration(ctx, configData)
-// 	if err != nil {
-// 		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
-// 		return
-// 	}
-// 	utils.WriteJSONResponse(w, http.StatusOK, config, "Configuration updated successfully")
-// }
+	cidInt, err := strconv.Atoi(confID)
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Invalid configuration ID")
+		return
+	}
+
+	err = h.configurationService.DeleteConfiguration(ctx, accID, cidInt)
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	utils.WriteJSONResponse(w, http.StatusOK, nil, "Configuration deleted successfully")
+}
+
+func (h *ConfigurationHandler) UpdateConfigurationHandler(w http.ResponseWriter, r *http.Request) {
+	payload, err := utils.ParseJSONBody(r)
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	confID, err := utils.GetPathParam(r, "id")
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	cidInt, err := strconv.Atoi(confID)
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Invalid configuration ID")
+		return
+	}
+
+	configData, exists := payload["configuration"].(map[string]any)
+	if !exists || len(configData) == 0 {
+		utils.WriteErrorResponse(w, http.StatusBadRequest, "Configuration data can't be blank")
+		return
+	}
+
+	configData["id"] = cidInt
+	configData["account_id"] = utils.GetCurrentAccountID(r.Context())
+
+	// validate configuration data using the generic validator
+	validator := validators.NewModelValidator[models.Configuration]()
+	_, err = validator.ValidateFromMap(configData)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ctx := r.Context()
+	updatedConfig, err := h.configurationService.UpdateConfiguration(ctx, configData)
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+
+	utils.WriteJSONResponse(w, http.StatusOK, updatedConfig, "Configuration updated successfully")
+}
