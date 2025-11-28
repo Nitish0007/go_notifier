@@ -1,10 +1,13 @@
 package utils
 
 import (
-	"log"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func ParseJSONBody(r *http.Request) (map[string]any, error) {
@@ -21,6 +24,23 @@ func ParseJSONBody(r *http.Request) (map[string]any, error) {
 		return nil, errors.New("request body is empty or invalid")
 	}
 	return payload, nil
+}
+
+func GetPathParam(r *http.Request, paramName string) (string, error){
+	pathParams := chi.URLParam(r, paramName)
+	if pathParams == "" {
+		return "", fmt.Errorf("%s parameter not found in path", paramName)
+	}
+	return pathParams, nil
+}
+
+func GetQueryParams(r *http.Request) (map[string]string, error) {
+	queryParams := r.URL.Query()
+	queryMap := make(map[string]string)
+	for key, values := range queryParams {
+		queryMap[key] = values[0]
+	}
+	return queryMap, nil
 }
 
 func WriteJSONResponse(w http.ResponseWriter, status int, data any, message string) error {

@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"github.com/Nitish0007/go_notifier/internal/models"
 	"gorm.io/gorm"
 )
@@ -43,14 +44,28 @@ func (r *ConfigurationRepository) Index(ctx context.Context, accountID int) ([]*
 	err := r.DB.WithContext(ctx).Where("account_id = ?", accountID).Order("created_at DESC").Find(&configs).Error
 	if err != nil {
 		return nil, err
-	}	
+	}
 	return configs, nil
 }
 
 func (r *ConfigurationRepository) Update(ctx context.Context, config *models.Configuration) error {
-	return r.DB.WithContext(ctx).Model(&models.Configuration{}).Where("id = ?", config.ID).Updates(config).Error
+	result := r.DB.WithContext(ctx).Model(&models.Configuration{}).Where("id = ? AND account_id = ?", config.ID, config.AccountID).Updates(config)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("configuration not found with id: %d", config.ID)
+	}
+	return nil
 }
 
 func (r *ConfigurationRepository) Delete(ctx context.Context, id int) error {
-	return r.DB.WithContext(ctx).Where("id = ?", id).Delete(&models.Configuration{}).Error
+	result := r.DB.WithContext(ctx).Where("id = ?", id).Delete(&models.Configuration{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("configuration not found with id: %d", id)
+	}
+	return nil
 }

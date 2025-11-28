@@ -10,4 +10,7 @@ import (
 func RegisterConfigurationRoutes(conn *gorm.DB, r chi.Router, h *handlers.ConfigurationHandler) {
 	r.Get("/configurations", h.GetConfigurationsHandler)
 	r.Post("/configurations", h.CreateConfigurationHandler)
+	r.Delete("/configurations/{id}", h.DeleteConfigurationHandler)
+	r.Put("/configurations/{id}", h.UpdateConfigurationHandler)
+	r.Patch("/configurations/{id}", h.UpdateConfigurationHandler)
 }

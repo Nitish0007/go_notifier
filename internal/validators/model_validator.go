@@ -49,9 +49,7 @@ func (v *ModelValidator[T]) ValidateFromMap(data map[string]any) (*T, error) {
 	return v.ValidateFromJSON(jsonData)
 }
 
-// ValidateStruct validates an existing struct instance.
-// This is useful for validating structs that were created programmatically
-// or retrieved from the database before use.
+// the method .Struct is defined in the validator package and it is used to validate the struct by using the tags in the struc
 func (v *ModelValidator[T]) ValidateStruct(obj *T) error {
 	if obj == nil {
 		return &ValidationError{
@@ -229,15 +227,12 @@ func (v *ModelValidator[T]) ValidateWithCustomRules(obj *T, customRules func(*T)
 	return nil
 }
 
-// IsValid checks if a struct is valid without returning detailed errors.
-// Returns true if valid, false otherwise.
+// this method is used to check if a struct is valid without returning detailed errors
 func (v *ModelValidator[T]) IsValid(obj *T) bool {
 	return v.ValidateStruct(obj) == nil
 }
 
-// ValidateAndConvert validates input and converts it to the target type.
-// This is a convenience method that combines validation and conversion.
-// Input can be []byte, map[string]any, or *T.
+// this method is used to validate the input and convert it to the target type
 func (v *ModelValidator[T]) ValidateAndConvert(input any) (*T, error) {
 	if input == nil {
 		return nil, fmt.Errorf("input cannot be nil")
