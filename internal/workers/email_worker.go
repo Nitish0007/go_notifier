@@ -26,7 +26,7 @@ type EmailWorker struct {
 	configurationRepo *repositories.ConfigurationRepository
 }
 
-func NewEmailWorker(dbConn *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, queue *rabbitmq_utils.Queue, notificationService *services.NotificationService) *EmailWorker {
+func NewEmailWorker(dbConn *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, notificationService *services.NotificationService) *EmailWorker {
 	q, err := rabbitmq_utils.NewQueue(notificationDeliveryQueueName)
 	if err != nil {
 		return nil
@@ -44,6 +44,7 @@ func NewEmailWorker(dbConn *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Cont
 
 
 func (w *EmailWorker) Consume() {
+	log.Printf(">>>>>>>>>>>>>>>>> Consuming email notifications\n")
 	forever := make(chan bool)
 	ch, err := rabbitmq_utils.CreateChannel(w.rbmqConn)
 	if err != nil {
@@ -123,4 +124,5 @@ func (w *EmailWorker) Consume() {
 		}
 	}()
 	<-forever
+	log.Printf(">>>>>>>>>>>>>>>>> Consumed email notifications\n\n")
 }
