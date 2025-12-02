@@ -42,13 +42,12 @@ func NewNotificationSchedulerWorker(db *gorm.DB, rbmqConn *rbmq.Connection, ctx 
 func (w *NotificationSchedulerWorker) Consume() {
 	forever := make(chan bool)
 	repo := repositories.NewNotificationRepository(w.dbConn)
-	n := &models.Notification{
-		AccountID: 0,
-		Status: models.Pending,
+	filters := map[string]any{
+		"status": models.Pending,
 	}
 	
 	// enqueue 500 notifications at a time to avoid overwhelming the queue
-	notifications, err := repo.GetNotificationsByObject(w.ctx, n, 500)
+	notifications, err := repo.GetNotificationsByObject(w.ctx, filters, 500)
 	if err != nil {
 		log.Printf("Error Fetching notifications: %v", err)
 		return

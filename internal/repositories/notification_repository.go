@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Nitish0007/go_notifier/internal/models"
 	"gorm.io/gorm"
@@ -69,14 +70,20 @@ func (r *NotificationRepository) GetNotificationsByStatus(ctx context.Context, s
 	return notifications, nil
 }
 
-func (r *NotificationRepository) GetNotificationsByObject(ctx context.Context, n *models.Notification, limit int) ([]*models.Notification, error) {
+func (r *NotificationRepository) GetNotificationsByObject(ctx context.Context, filters map[string]any, limit int) ([]*models.Notification, error) {
 	var notifications []*models.Notification
-	err := r.DB.WithContext(ctx).Where(n).Limit(limit).Find(&notifications).Error
+	query := r.DB.WithContext(ctx)
+	for key, value := range filters {
+		query = query.Where(fmt.Sprintf("%s = ?", key), value)
+	}
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	err := query.Find(&notifications).Error
 	if err != nil {
 		return nil, err
 	}
-
-	return notifications, err
+	return notifications, nil
 }
 
 func (r *NotificationRepository) UpdateNotification(ctx context.Context, fieldsToUpdate map[string]any, nObj *models.Notification) (*models.Notification, error) {
