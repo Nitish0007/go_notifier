@@ -22,7 +22,7 @@ const (
 	Pending NotificationStatus = iota
 	Enqueued
 	Sent
-	failed
+	Failed
 )
 
 type Notification struct {
@@ -60,7 +60,7 @@ func StringToNotificationStatus(status string) (NotificationStatus, error) {
 	case "sent":
 		return Sent, nil
 	case "failed":
-		return failed, nil
+		return Failed, nil
 	default:
 		return -1, errors.New("unknown status type")
 	}
@@ -74,7 +74,7 @@ func StatusToString(status NotificationStatus) (string, error) {
 		return "enqueued", nil
 	case Sent:
 		return "sent", nil
-	case failed:
+	case Failed:
 		return "failed", nil
 	default:
 		return "", errors.New("unknown status type")

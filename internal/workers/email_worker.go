@@ -69,22 +69,36 @@ func (w *EmailWorker) Consume() {
 				w.queue.PushToDLQ(body)
 				continue
 			}
-
+			log.Printf("========================> Message body: %v", body)
 			notificationID, ok := body["notificationID"].(string)
 			if !ok {
-				log.Printf("Notification ID is not a string: %v", body["notificationID"])
+				log.Printf("Notification ID not found in message body %v", body)
 				w.queue.PushToDLQ(body)
 				continue
 			}
 
-			accountID, ok := body["accountID"].(int)
+			aid, exists := body["accountID"]
+			if !exists {
+				log.Printf("Account ID not found in message body %v", body)
+				w.queue.PushToDLQ(body)
+				continue
+			}
+			
+			accountIDFloat64, ok := aid.(float64)
 			if !ok {
-				log.Printf("Account ID is not an integer: %v", body["accountID"])
+				log.Printf("Account ID is not a number: %v", aid)
 				w.queue.PushToDLQ(body)
 				continue
 			}
 
-			config, err := w.configurationRepo.GetByAccountID(w.ctx, accountID)
+			accountID := int(accountIDFloat64)
+
+			configFilter := map[string]any{
+				"account_id": accountID,
+				"config_type": string(models.SMTPConfig),
+				"default_configuration": true,
+			}
+			config, err := w.configurationRepo.GetByFields(w.ctx, configFilter)
 			if err != nil {
 				log.Printf("Error in getting configuration: %v", err)
 				w.queue.PushToDLQ(body)
@@ -120,7 +134,7 @@ func (w *EmailWorker) Consume() {
 				continue
 			}
 
-			msg.Ack(false)
+			// msg.Ack(false)
 		}
 	}()
 	<-forever

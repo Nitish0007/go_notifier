@@ -43,7 +43,7 @@ func (w *NotificationSchedulerWorker) Consume() {
 	forever := make(chan bool)
 	repo := repositories.NewNotificationRepository(w.dbConn)
 	filters := map[string]any{
-		"status": models.Pending,
+		"status": models.Enqueued,
 	}
 	
 	// enqueue 500 notifications at a time to avoid overwhelming the queue
@@ -62,7 +62,7 @@ func (w *NotificationSchedulerWorker) Consume() {
 			}
 
 			// push to queue
-			if err := rabbitmq_utils.PushToQueue(w.queue.Main.Name, map[string]any{"notificationID": body["ID"], "accountID": body["AccountID"]}); err != nil {
+			if err := rabbitmq_utils.PushToQueue(w.queue.Main.Name, map[string]any{"notificationID": body["id"], "accountID": body["account_id"]}); err != nil {
 				log.Printf("Error pushing to queue: %v", err)
 				continue
 			}

@@ -69,3 +69,12 @@ func (r *ConfigurationRepository) Delete(ctx context.Context, id int) error {
 	}
 	return nil
 }
+
+func (r *ConfigurationRepository) GetByFields(ctx context.Context, fields map[string]any) (*models.Configuration, error) {
+	var config models.Configuration
+	err := r.DB.WithContext(ctx).Where(fields).First(&config).Error
+	if err != nil {
+		return nil, err
+	}
+	return &config, nil
+}
