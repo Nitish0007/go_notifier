@@ -92,6 +92,7 @@ func (s *NotificationService) SendNotification(ctx context.Context, notification
 		log.Printf("Error in getting notification: %v", err)
 		return err
 	}
+	log.Printf("Fetched notification by ID => Notification: %v", notification)
 
 	if notification == nil {
 		return errors.New("notification not found")
@@ -110,6 +111,16 @@ func (s *NotificationService) SendNotification(ctx context.Context, notification
 	err = notifier.Send(notification, smtpConfig)
 	if err != nil {
 		log.Printf("Error in sending notification: %v", err)
+		fieldsToUpdate := map[string]any {
+			"status": models.Failed,
+			"sent_at": time.Now(),
+			"error_message": err.Error(),
+		}
+		_, err = s.notificationRepo.UpdateNotification(ctx, fieldsToUpdate, notification)
+		if err != nil {
+			log.Printf("Error in updating notification: %v", err)
+			return err
+		}
 		return err
 	}
 
