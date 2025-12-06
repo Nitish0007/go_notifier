@@ -76,6 +76,36 @@ func DeleteRedis(ctx context.Context, key string) error {
 	return nil
 }
 
+func SetRedisJSON(ctx context.Context, key string, value any, expiration time.Duration) error {
+	client := GetRedisClient()
+	err := client.Set(ctx, key, value, expiration).Err()
+	if err != nil {
+		log.Printf("Error setting value in Redis: %v", err)
+		return err
+	}
+	return nil
+}
+
+func GetRedisJSON(ctx context.Context, key string) (any, error) {
+	client := GetRedisClient()
+	value, err := client.Get(ctx, key).Result()
+	if err != nil {
+		log.Printf("Error getting value from Redis: %v", err)
+		return nil, err
+	}
+	return value, nil
+}	
+
+func DeleteRedisJSON(ctx context.Context, key string) error {
+	client := GetRedisClient()
+	err := client.Del(ctx, key).Err()
+	if err != nil {
+		log.Printf("Error deleting value from Redis: %v", err)
+		return err
+	}
+	return nil
+}
+
 // func SetRedisHash(ctx context.Context, key string, field string, value any, expiration time.Duration) error {
 // 	client := GetRedisClient()
 // 	err := client.HSet(ctx, key, field, value).Err()
