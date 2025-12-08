@@ -1,6 +1,8 @@
 package rabbitmq_utils
 
 import (
+	"time"
+
 	rbmq "github.com/rabbitmq/amqp091-go"
 )
 
@@ -18,24 +20,24 @@ func NewQueue(queue_name string) (*Queue, error) {
 	return q, nil
 }
 
-func (q *Queue) PushToMain(body map[string]any) error {
-	err := PushToQueue(q.Main.Name, body)
+func (q *Queue) PushToMain(jobMessage *JobMessage) error {
+	err := PushToQueue(q.Main.Name, jobMessage)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (q *Queue) PushToRetry(body map[string]any) error {
-	err := PushToQueue(q.Retry.Name, body)
+func (q *Queue) PushToRetry(jobMessage *JobMessage, retryCount int, maxRetries int, retryDelay time.Duration) error {
+	err := PushToQueue(q.Retry.Name, jobMessage)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (q *Queue) PushToDLQ(body map[string]any) error {
-	err := PushToQueue(q.DLQ.Name, body)
+func (q *Queue) PushToDLQ(jobMessage *JobMessage) error {
+	err := PushToQueue(q.DLQ.Name, jobMessage)
 	if err != nil {
 		return err
 	}
@@ -60,13 +62,13 @@ func setupQueue(queue_name string) (*Queue, error) {
 	}
 
 	// create retry queue
-	retryQueue, err := CreateQueue(ch, queue_name + "_retry")
+	retryQueue, err := CreateQueue(ch, queue_name+"_retry")
 	if err != nil {
 		return nil, err
 	}
 
 	// create dead letter queue
-	dlq, err := CreateQueue(ch, queue_name + "_dlq")
+	dlq, err := CreateQueue(ch, queue_name+"_dlq")
 	if err != nil {
 		return nil, err
 	}

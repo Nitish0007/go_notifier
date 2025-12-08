@@ -1,7 +1,7 @@
 package rabbitmq_utils
 
 import (
-	"encoding/json"
+	// "encoding/json"
 	"log"
 	"time"
 	// "context"
@@ -64,9 +64,9 @@ func CreateQueue(ch *rbmq.Channel, queue_name string) (*rbmq.Queue, error) {
 	return &q, err
 }
 
-func PushToQueue(queue_name string, body map[string]any) error {
-	jsonBody, err := json.Marshal(body)
-	failOnError(err, "Error converting body to JSON")
+func PushToQueue(queue_name string, jobMessage *JobMessage) error {
+	jsonBody, err := jobMessage.ToJSON()
+	failOnError(err, "Error converting job message to JSON")
 
 	conn := ConnectMQ()
 	defer conn.Close()
@@ -76,6 +76,7 @@ func PushToQueue(queue_name string, body map[string]any) error {
 
 	q, err := CreateQueue(ch, queue_name)
 	failOnError(err, "Error creating Queue")
+
 	err = ch.Publish(
 		"",
 		q.Name,
@@ -96,6 +97,24 @@ func PushToQueue(queue_name string, body map[string]any) error {
 	return nil
 }
 
+func ReadFromQueue(queue_name string) (<-chan rbmq.Delivery, error) {
+	conn := ConnectMQ()
+	defer conn.Close()
+
+	ch, _ := CreateChannel(conn)
+	defer ch.Close()
+
+	q, err := CreateQueue(ch, queue_name)
+
+
+	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
+	if err != nil {
+		failOnError(err, "Failed to consume messages")
+		return nil, err
+	}
+
+	return msgs, nil
+}
 func CalculateRetryDelay(retryNumber int) time.Duration {
 	return time.Duration(retryNumber) * RETRY_DELAY
 }
