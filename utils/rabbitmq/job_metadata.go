@@ -9,15 +9,20 @@ import (
 )
 
 type JobMetadata struct {
-	JobID string `json:"job_id"`
 	RetryCount int `json:"retry_count"`
 	MaxRetries int `json:"max_retries"`
 	RetryDelay time.Duration `json:"retry_delay"`
-	Payload map[string]any `json:"payload"`
 }
 
+func NewJobMetadata(retryCount int, maxRetries int, retryDelay time.Duration) *JobMetadata {
+	return &JobMetadata{
+		RetryCount: retryCount,
+		MaxRetries: maxRetries,
+		RetryDelay: retryDelay,
+	}
+}
 func StoreJobMetadata(ctx context.Context, jobID string, metadata JobMetadata) error {
-	key := fmt.Sprintf("jmd:%s:%d", jobID, metadata.RetryCount)
+	key := fmt.Sprintf("jmd:%s", jobID)
 	err := redis_utils.SetRedisJSON(ctx, key, metadata, 0)
 	if err != nil {
 		return fmt.Errorf("failed to store job metadata: %w", err)
