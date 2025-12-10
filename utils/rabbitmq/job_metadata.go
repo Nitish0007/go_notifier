@@ -6,6 +6,7 @@ import (
 	"time"
 
 	redis_utils "github.com/Nitish0007/go_notifier/utils/redis"
+	"github.com/redis/go-redis/v9"
 )
 
 type JobMetadata struct {
@@ -33,6 +34,11 @@ func StoreJobMetadata(ctx context.Context, jobID string, metadata JobMetadata) e
 func GetJobMetadata(ctx context.Context, jobID string) (*JobMetadata, error) {
 	key := fmt.Sprintf("jmd:%s", jobID)
 	metadata, err := redis_utils.GetRedisJSON(ctx, key)
+	if err == redis.Nil {
+		// create new metadata
+		return nil, nil
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get job metadata: %w", err)
 	}
