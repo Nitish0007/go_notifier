@@ -14,7 +14,7 @@ import (
 )
 
 type NotificationService struct {
-	notifiers map[string]notifiers.Notifier
+	notifiers        map[string]notifiers.Notifier
 	notificationRepo *repositories.NotificationRepository
 }
 
@@ -23,12 +23,12 @@ func NewNotificationService(list []notifiers.Notifier, nr *repositories.Notifica
 	for _, val := range list {
 		if val.ChannelType() == "email" || val.ChannelType() == "sms" || val.ChannelType() == "in_app" {
 			nList[val.ChannelType()] = val
-		}else{
+		} else {
 			log.Printf(">>>>>>>>>>>>> Unknown Notifier: %v", val.ChannelType())
 		}
 	}
 	return &NotificationService{
-		notifiers: nList,
+		notifiers:        nList,
 		notificationRepo: nr,
 	}
 }
@@ -57,8 +57,8 @@ func (s *NotificationService) CreateNotification(ctx context.Context, data map[s
 	if n == nil {
 		return nil, errors.New("failed to create notification")
 	}
-	
-return n, nil
+
+	return n, nil
 }
 
 func (s *NotificationService) GetNotificationById(ctx context.Context, nID string, accID int) (*models.Notification, error) {
@@ -75,9 +75,9 @@ func (s *NotificationService) SendOrScheduleNotification(ctx context.Context, n 
 		// push in queue
 		body := map[string]any{
 			"notificationID": n.ID,
-			"accountID": utils.GetCurrentAccountID(ctx),
+			"accountID":      utils.GetCurrentAccountID(ctx),
 		}
-		err := rabbitmq_utils.PushToQueue("emailer", body)
+		err := rabbitmq_utils.PushToQueueByName("emailer", rabbitmq_utils.NewJobMessage(body))
 		if err != nil {
 			log.Printf("ERROR!!!: %v", err)
 			return err
@@ -111,9 +111,9 @@ func (s *NotificationService) SendNotification(ctx context.Context, notification
 	err = notifier.Send(notification, smtpConfig)
 	if err != nil {
 		log.Printf("Error in sending notification: %v", err)
-		fieldsToUpdate := map[string]any {
-			"status": models.Failed,
-			"sent_at": time.Now(),
+		fieldsToUpdate := map[string]any{
+			"status":        models.Failed,
+			"sent_at":       time.Now(),
 			"error_message": err.Error(),
 		}
 		_, err = s.notificationRepo.UpdateNotification(ctx, fieldsToUpdate, notification)
@@ -124,9 +124,9 @@ func (s *NotificationService) SendNotification(ctx context.Context, notification
 		return err
 	}
 
-	fieldsToUpdate := map[string]any {
-		"status": models.Sent,
-		"sent_at": time.Now(),
+	fieldsToUpdate := map[string]any{
+		"status":        models.Sent,
+		"sent_at":       time.Now(),
 		"error_message": nil,
 	}
 	_, err = s.notificationRepo.UpdateNotification(ctx, fieldsToUpdate, notification)

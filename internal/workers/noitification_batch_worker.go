@@ -3,28 +3,28 @@
 package workers
 
 import (
-	"log"
 	"context"
 	"encoding/json"
+	"log"
 	"time"
 
-	"gorm.io/gorm"
-	rbmq "github.com/rabbitmq/amqp091-go"
 	"github.com/Nitish0007/go_notifier/internal/services"
 	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
+	rbmq "github.com/rabbitmq/amqp091-go"
+	"gorm.io/gorm"
 )
 
 var (
 	batchQueueName = "notification_batch"
-	maxRetries = 5
-	retryDelay = 1 * time.Minute
+	maxRetries     = 5
+	retryDelay     = 1 * time.Minute
 )
 
 type NotificationBatchWorker struct {
-	dbConn *gorm.DB
-	rbmqConn *rbmq.Connection
-	queue *rabbitmq_utils.Queue
-	ctx context.Context
+	dbConn                 *gorm.DB
+	rbmqConn               *rbmq.Connection
+	queue                  *rabbitmq_utils.Queue
+	ctx                    context.Context
 	blkNotificationService *services.BulkNotificationService
 }
 
@@ -34,12 +34,12 @@ func NewNotificationBatchWorker(dbConn *gorm.DB, rbmqConn *rbmq.Connection, ctx 
 		log.Printf("Error creating queue: %v", err)
 		return nil
 	}
-	
+
 	return &NotificationBatchWorker{
-		dbConn: dbConn,
-		rbmqConn: rbmqConn,
-		queue: queue,
-		ctx: ctx,
+		dbConn:                 dbConn,
+		rbmqConn:               rbmqConn,
+		queue:                  queue,
+		ctx:                    ctx,
 		blkNotificationService: blkNotificationService,
 	}
 }
@@ -67,7 +67,7 @@ func (w *NotificationBatchWorker) Consume() {
 			if err != nil {
 				log.Printf("Error in unmarshalling body: %v", err)
 				msg.Ack(false)
-				w.queue.PushToDLQ(body)
+				w.queue.PushToDLQ(rabbitmq_utils.NewJobMessage(body))
 				continue
 			}
 
@@ -75,23 +75,21 @@ func (w *NotificationBatchWorker) Consume() {
 			batchID, ok := body["batch_id"].(string)
 			if !ok {
 				log.Printf("Batch ID is not a string: %v", body["batch_id"])
-				w.queue.PushToDLQ(body)
+				w.queue.PushToDLQ(rabbitmq_utils.NewJobMessage(body))
 				continue
 			}
 
-			for retryCount := 1; retryCount <= maxRetries; retryCount++ {
 				err = w.blkNotificationService.ProcessBatch(w.ctx, batchID)
 				if err != nil {
 					log.Printf("Error in processing batch: %v", err)
-					w.queue.PushToRetry(body)
+					w.queue.PushToRetry(rabbitmq_utils.NewJobMessage(body))
 					continue
 				}
 				time.Sleep(retryDelay)
-			}
-			w.queue.PushToDLQ(body)
+			w.queue.PushToDLQ(rabbitmq_utils.NewJobMessage(body))
 			continue
 		}
 	}()
-		
+
 	<-forever
 }

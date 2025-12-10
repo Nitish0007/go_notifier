@@ -1,6 +1,7 @@
 package rabbitmq_utils
 
 import (
+	"context"
 	"time"
 
 	rbmq "github.com/rabbitmq/amqp091-go"
@@ -21,15 +22,45 @@ func NewQueue(queue_name string) (*Queue, error) {
 }
 
 func (q *Queue) PushToMain(jobMessage *JobMessage) error {
-	err := PushToQueue(q.Main.Name, jobMessage)
+	err := PushToQueue(q.Main, jobMessage)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (q *Queue) PushToRetry(jobMessage *JobMessage, retryCount int, maxRetries int, retryDelay time.Duration) error {
-	err := PushToQueue(q.Retry.Name, jobMessage)
+func (q *Queue) PushToRetry(jobMessage *JobMessage) error {
+	jid := jobMessage.GetJobID()
+	metadata, err := GetJobMetadata(context.Background(), jid)
+	if err != nil {
+		return err
+	}
+
+	// create new metadata if not already present
+	if metadata == nil {
+		metadata = NewJobMetadata(1, MAX_RETRIES, CalculateRetryDelay(1))
+		err = StoreJobMetadata(context.Background(), jid, *metadata)
+		if err != nil {
+			return err
+		}
+		return PushToQueue(q.Retry, jobMessage)
+	}
+
+	// increment retry count
+	metadata.RetryCount++
+
+	if metadata.RetryCount > MAX_RETRIES {
+		return q.PushToDLQ(jobMessage)
+	}
+	// calculate retry delay
+	metadata.RetryDelay = CalculateRetryDelay(metadata.RetryCount)
+	metadata.MaxRetries = MAX_RETRIES
+	// store updated metadata
+	err = StoreJobMetadata(context.Background(), jid, *metadata)
+	if err != nil {
+		return err
+	}
+	err = PushToQueue(q.Retry, jobMessage)
 	if err != nil {
 		return err
 	}
@@ -37,7 +68,7 @@ func (q *Queue) PushToRetry(jobMessage *JobMessage, retryCount int, maxRetries i
 }
 
 func (q *Queue) PushToDLQ(jobMessage *JobMessage) error {
-	err := PushToQueue(q.DLQ.Name, jobMessage)
+	err := PushToQueue(q.DLQ, jobMessage)
 	if err != nil {
 		return err
 	}
@@ -79,3 +110,9 @@ func setupQueue(queue_name string) (*Queue, error) {
 		DLQ:   dlq,
 	}, nil
 }
+
+func CalculateRetryDelay(retryNumber int) time.Duration {
+	return time.Duration(retryNumber) * RETRY_DELAY
+}
+
+

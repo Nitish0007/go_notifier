@@ -65,15 +65,14 @@ func (s *BulkNotificationService) CreateBulkNotifications(ctx context.Context, d
 		"batch_id": batch.ID,
 		"account_id": utils.GetCurrentAccountID(ctx),
 	}
-	err = rabbitmq_utils.PushToQueue("notification_batch", body)
+	err = rabbitmq_utils.PushToQueueByName("notification_batch", rabbitmq_utils.NewJobMessage(body))
 	if err != nil {
-		return nil, errors.New("failed to push batch to queue")
+		return nil, err
 	}
-
-	// return success response
+	
 	return map[string]any{
 		"batch_id": batch.ID,
-		"message": "batch created successfully and will be processed asynchronously",
+		"message":  "batch created successfully and will be processed asynchronously",
 	}, nil
 }
 

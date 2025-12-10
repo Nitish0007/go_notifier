@@ -1,10 +1,8 @@
 package rabbitmq_utils
 
 import (
-	// "encoding/json"
 	"log"
 	"time"
-	// "context"
 
 	rbmq "github.com/rabbitmq/amqp091-go"
 )
@@ -64,7 +62,7 @@ func CreateQueue(ch *rbmq.Channel, queue_name string) (*rbmq.Queue, error) {
 	return &q, err
 }
 
-func PushToQueue(queue_name string, jobMessage *JobMessage) error {
+func PushToQueue(queue *rbmq.Queue, jobMessage *JobMessage) error {
 	jsonBody, err := jobMessage.ToJSON()
 	failOnError(err, "Error converting job message to JSON")
 
@@ -74,12 +72,9 @@ func PushToQueue(queue_name string, jobMessage *JobMessage) error {
 	ch, _ := CreateChannel(conn)
 	defer ch.Close()
 
-	q, err := CreateQueue(ch, queue_name)
-	failOnError(err, "Error creating Queue")
-
 	err = ch.Publish(
 		"",
-		q.Name,
+		queue.Name,
 		false,
 		false,
 		rbmq.Publishing{
@@ -97,7 +92,21 @@ func PushToQueue(queue_name string, jobMessage *JobMessage) error {
 	return nil
 }
 
-func ReadFromQueue(queue_name string) (<-chan rbmq.Delivery, error) {
+func PushToQueueByName(queue_name string, jobMessage *JobMessage) error {
+	conn := ConnectMQ()
+	defer conn.Close()
+
+	ch, _ := CreateChannel(conn)
+	defer ch.Close()
+
+	q, err := CreateQueue(ch, queue_name)
+	if err != nil {
+		return err
+	}
+	return PushToQueue(q, jobMessage)
+}
+
+func ReadFromQueue(queue_name string) (<-chan *JobMessage, error) {
 	conn := ConnectMQ()
 	defer conn.Close()
 
@@ -112,9 +121,18 @@ func ReadFromQueue(queue_name string) (<-chan rbmq.Delivery, error) {
 		failOnError(err, "Failed to consume messages")
 		return nil, err
 	}
+	jobMessages := make(chan *JobMessage, len(msgs))
+	for msg := range msgs {
+		jobMsg := NewJobMessage(map[string]any{})
+		err := jobMsg.FromJSON(msg.Body)
+		if err != nil {
+			failOnError(err, "Failed to unmarshal job message")
+			return nil, err
+		}
+		jobMessages <- jobMsg
+	}
+	close(jobMessages)
 
-	return msgs, nil
+	return jobMessages, nil
 }
-func CalculateRetryDelay(retryNumber int) time.Duration {
-	return time.Duration(retryNumber) * RETRY_DELAY
-}
+
