@@ -11,9 +11,18 @@ type JobMessage struct {
 }
 
 func NewJobMessage(payload map[string]any) *JobMessage {
+	jobID, exists := payload["job_id"].(string)
+	if !exists || jobID == "" {
+		jobID = uuid.New().String()
+	}
+
+	body, exists := payload["payload"].(map[string]any)
+	if !exists {
+		body = map[string]any{}
+	}
 	return &JobMessage{
-		JobID: uuid.New().String(),
-		Payload: payload,
+		JobID: jobID,
+		Payload: body,
 	}
 }
 

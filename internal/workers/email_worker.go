@@ -52,20 +52,32 @@ func (w *EmailWorker) Consume() {
 	}
 	defer ch.Close()
 
-	jobMessages, err := rabbitmq_utils.ReadFromQueue(w.queue.Main.Name)
+	msgs, err := ch.Consume(w.queue.Main.Name, "", true, false, false, false, nil)
 	if err != nil {
-		log.Printf("Error in reading from queue: %v", err)
+		log.Printf("Error in consuming messages: %v", err)
 		return
 	}
-	
+
 	go func() {
-		for jobMsg := range jobMessages {
+		for msg := range msgs {
+
+			log.Printf("========================> Message body without unmarshalling: %v", string(msg.Body))
+			jobMsg := rabbitmq_utils.NewJobMessage(map[string]any{})
+			err := jobMsg.FromJSON(msg.Body)
+			if err != nil {
+				log.Printf("Error in unmarshalling body: %v", err)
+				w.queue.PushToDLQ(jobMsg)
+				msg.Ack(false)
+				continue
+			}
+
 			body := jobMsg.GetPayload()
 			log.Printf("========================> Message body: %v", body)
 			notificationID, ok := body["notificationID"].(string)
 			if !ok {
 				log.Printf("Notification ID not found in message body %v", body)
 				w.queue.PushToDLQ(jobMsg)
+				msg.Ack(false)
 				continue
 			}
 			
@@ -73,6 +85,7 @@ func (w *EmailWorker) Consume() {
 			if !exists {
 				log.Printf("Account ID not found in message body %v", body)
 				w.queue.PushToDLQ(jobMsg)
+				msg.Ack(false)
 				continue
 			}
 			
@@ -93,16 +106,19 @@ func (w *EmailWorker) Consume() {
 			if err != nil {
 				log.Printf("Error in getting configuration: %v", err)
 				w.queue.PushToDLQ(jobMsg)
+				msg.Ack(false)
 				continue
 			}
 			if config == nil {
 				log.Printf("Configuration not found for account ID: %v", accountID)
 				w.queue.PushToDLQ(jobMsg)
+				msg.Ack(false)
 				continue
 			}
 			if config.ConfigType != string(models.SMTPConfig) {
 				log.Printf("Configuration is not an email configuration: %v", config.ConfigType)
 				w.queue.PushToDLQ(jobMsg)
+				msg.Ack(false)
 				continue
 			}
 			smtpConfig := &models.SMTPConfiguration{}
@@ -116,14 +132,17 @@ func (w *EmailWorker) Consume() {
 			if err != nil {
 				log.Printf("Error in unmarshalling SMTP configuration: %v", err)
 				w.queue.PushToDLQ(jobMsg)
+				msg.Ack(false)
 				continue
 			}
 			err = w.notificationService.SendNotification(w.ctx, notificationID, accountID, smtpConfig)
 			if err != nil {
 				log.Printf("Error in sending notification: %v", err)
 				w.queue.PushToRetry(jobMsg)
+				msg.Ack(false)
 				continue
 			}
+			msg.Ack(false)
 		}
 	}()
 	<-forever
