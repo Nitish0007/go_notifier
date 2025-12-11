@@ -106,21 +106,14 @@ func PushToQueueByName(queue_name string, jobMessage *JobMessage) error {
 	return PushToQueue(q, jobMessage)
 }
 
-func ReadFromQueue(queue_name string) (<-chan *JobMessage, error) {
-	conn := ConnectMQ()
-	defer conn.Close()
-
-	ch, _ := CreateChannel(conn)
-	defer ch.Close()
-
-	q, err := CreateQueue(ch, queue_name)
-
-
+func ReadFromQueue(q *rbmq.Queue, ch *rbmq.Channel) (<-chan *JobMessage, error) {
 	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
 	if err != nil {
 		failOnError(err, "Failed to consume messages")
 		return nil, err
 	}
+
+	// create a channel to store the job messages
 	jobMessages := make(chan *JobMessage, len(msgs))
 	for msg := range msgs {
 		jobMsg := NewJobMessage(map[string]any{})

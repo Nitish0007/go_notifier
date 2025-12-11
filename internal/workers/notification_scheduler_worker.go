@@ -65,7 +65,8 @@ func (w *NotificationSchedulerWorker) Consume() {
 				
 				for _, n := range notifications {
 					// create job message
-					jobMessage := rabbitmq_utils.NewJobMessage(map[string]any{"notificationID": n.ID, "accountID": n.AccountID})
+					payload := map[string]any{"notificationID": n.ID, "accountID": n.AccountID}
+					jobMessage := rabbitmq_utils.NewJobMessage(map[string]any{"payload": payload})
 					// push to queue
 					if err := rabbitmq_utils.PushToQueue(w.queue.Main, jobMessage); err != nil {
 						log.Printf("Error pushing to queue: %v", err)
