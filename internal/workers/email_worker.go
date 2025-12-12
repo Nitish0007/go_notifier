@@ -52,7 +52,7 @@ func (w *EmailWorker) Consume() {
 	}
 	defer ch.Close()
 
-	msgs, err := ch.Consume(w.queue.Main.Name, "", true, false, false, false, nil)
+	msgs, err := ch.Consume(w.queue.Main.Name, "", false, false, false, false, nil)
 	if err != nil {
 		log.Printf("Error in consuming messages: %v", err)
 		return
@@ -159,7 +159,7 @@ func (w *EmailWorker) ConsumeRetry() {
 	}
 	defer ch.Close()
 
-	msgs, err := ch.Consume(w.queue.Retry.Name, "", true, false, false, false, nil)
+	msgs, err := ch.Consume(w.queue.Retry.Name, "", false, false, false, false, nil)
 	if err != nil {
 		log.Printf("Error in consuming messages: %v", err)
 		return

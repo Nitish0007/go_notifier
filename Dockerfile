@@ -1,6 +1,8 @@
 # Stage 1: Build
 FROM golang:1.24-alpine AS builder
 
+ENV ENV=production
+
 # application path
 WORKDIR /app
 
