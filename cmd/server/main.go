@@ -2,12 +2,14 @@ package main
 
 import (
 	// "context"
+	"os"
 	"log"
 	"net/http"
 
 	"github.com/Nitish0007/go_notifier/initializer"
 	"github.com/Nitish0007/go_notifier/utils"
 	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv"
 )
 
 // For printing all registered routes - helpful in debugging
@@ -25,6 +27,21 @@ func PrintRoutes(r chi.Router) {
 func main() {
 	log.Println("\n\nStarting API Server...")
 	log.SetFlags(log.LstdFlags | log.Llongfile) // configuring logger to print filename and line number
+
+	// load environment variables
+	env := os.Getenv("ENV")
+	
+	if env == "development" {
+		err := godotenv.Load(".development.env")
+		if err != nil {
+			log.Fatalf("Error loading .development.env file: %v", err)
+		}
+	} else {
+		err := godotenv.Load(".env")
+		if err != nil {
+			log.Fatalf("Error loading .env file: %v", err)
+		}
+	}
 
 	db, err := utils.ConnectDB()
 	if err != nil {

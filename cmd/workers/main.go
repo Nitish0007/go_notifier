@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"github.com/joho/godotenv"
 
 	"github.com/Nitish0007/go_notifier/internal/notifiers"
 	"github.com/Nitish0007/go_notifier/internal/repositories"
@@ -18,6 +19,21 @@ import (
 func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile) // configuring logger to print filename and line number
 	log.Println("\n\nStarting Workers...")
+
+	// load environment variables
+	env := os.Getenv("ENV")
+	
+	if env == "development" {
+		err := godotenv.Load(".development.env")
+		if err != nil {
+			log.Fatalf("Error loading .development.env file: %v", err)
+		}
+	} else {
+		err := godotenv.Load(".env")
+		if err != nil {
+			log.Fatalf("Error loading .env file: %v", err)
+		}
+	}
 
 	// make database connection for workers
 	dbConn, err := utils.ConnectDB()

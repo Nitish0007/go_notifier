@@ -17,7 +17,7 @@ func ConnectRedis() *redis.Client {
 	}
 
 	RedisClient = redis.NewClient(&redis.Options{
-		Addr: os.Getenv("REDIS_ADDR"),
+		Addr: os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT"),
 		Password: os.Getenv("REDIS_PASSWORD"),
 		DB: 0,
 		PoolSize: 10,
@@ -34,6 +34,7 @@ func ConnectRedis() *redis.Client {
 	_, err := RedisClient.Ping(context.Background()).Result()
 	if err != nil {
 		log.Fatalf("Failed to connect to Redis: %v", err)
+		return nil
 	}
 
 	return RedisClient
