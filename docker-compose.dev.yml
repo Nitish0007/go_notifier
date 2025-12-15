@@ -16,7 +16,7 @@ services:
       retries: 5
 
   notifier_redis:
-    image: redis:7-alpine
+    image: redis:8.4-alpine
     platform: linux/amd64
     ports: 
       - "6379:6379"
@@ -24,17 +24,29 @@ services:
       - redis_data:/data
   
   notifier_rbmq:
-    image: rabbitmq:4.1.1-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.rabbitmq
     platform: linux/amd64
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672" # AMQP endpoint for clients to connect to RabbitMQ
+      - "15672:15672" # management UI endpoint
+      - "15692:15692"  # Prometheus metrics endpoint
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
     command: >
       sh -c "rabbitmq-plugins enable rabbitmq_management && 
+            rabbitmq-plugins enable rabbitmq_delayed_message_exchange &&
+            rabbitmq-plugins enable rabbitmq_consistent_hash_exchange &&
+            rabbitmq-plugins enable rabbitmq_prometheus &&
+            rabbitmq-plugins enable rabbitmq_shovel &&
+            rabbitmq-plugins enable rabbitmq_shovel_management &&
             rabbitmq-server"
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      interval: 5s
+      retries: 5
 
   notifier_migrate: # its a one-time run container, and should be exited with code 0 for successful executions of migrations
     image: migrate/migrate # official image provided by golang-migrate maintainers
@@ -82,7 +94,7 @@ services:
       notifier_redis:
         condition: service_started
       notifier_rbmq:
-        condition: service_started
+        condition: service_healthy
 
   notifier-workers:
     platform: linux/amd64
@@ -105,7 +117,7 @@ services:
       notifier-api:
         condition: service_started
       notifier_rbmq:
-        condition: service_started
+        condition: service_healthy
     command:
       [
         "go", "run", "./cmd/workers/main.go"
@@ -115,7 +127,40 @@ services:
       #   "./workers"
       # ]
 
+# Prometheus & Grafana as docker images only for development enviroment
+  prometheus:
+    image: prom/prometheus:latest
+    platform: linux/amd64
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    depends_on:
+      notifier_rbmq:
+        condition: service_started
+
+  grafana:
+    image: grafana/grafana:latest
+    platform: linux/amd64
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_started
+
 volumes:
   postgres_data:
   redis_data:
+  prometheus_data:
+  grafana_data:
 

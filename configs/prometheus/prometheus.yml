@@ -1,0 +1,37 @@
+global:
+  scrape_interval: 15s # interval at which the metrics are scraped
+  evaluation_interval: 15s # interval at which the rules are evaluated
+
+########################################################################################################################
+# NOTE: Prometheus rules are not used in this project yet, but are included here for reference.
+# Prometheus rules are specified under the 'rule_files' and 'groups' sections in Prometheus configuration.
+# They enable recording new time series (recording rules) or generating alerts (alerting rules).
+#
+# Example - Adding rule files to Prometheus config:
+#
+# rule_files:
+#   - "alert.rules.yml"
+#
+# In a separate `alert.rules.yml` file, you might have:
+#
+# groups:
+# - name: example_alert.rules
+#   rules:
+#   - alert: InstanceDown
+#     expr: up == 0
+#     for: 5m
+#     labels:
+#       severity: "critical"
+#     annotations:
+#       summary: "Instance {{ $labels.instance }} down"
+#       description: "{{ $labels.instance }} has been down for more than 5 minutes."
+#
+# This rule alerts when an instance is down for more than 5 minutes.
+########################################################################################################################
+
+scrape_configs:
+  - job_name: 'rabbitmq'
+    static_configs:
+      - targets: ['notifier_rbmq:15692'] # Prometheus metrics endpoint
+        labels:
+          instance: 'rabbitmq-dev' # instance name for the metrics

@@ -16,7 +16,7 @@ services:
       retries: 5
 
   notifier_redis:
-    image: redis:7-alpine
+    image: redis:8.4-alpine
     platform: linux/amd64
     ports: 
       - "6379:6379"
@@ -24,7 +24,9 @@ services:
       - redis_data:/data
   
   notifier_rbmq:
-    image: rabbitmq:4.1.1-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.rabbitmq
     platform: linux/amd64
     ports:
       - "5672:5672"
@@ -32,8 +34,15 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: user
       RABBITMQ_DEFAULT_PASS: password
+    volumes:
+      - ./configs/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
     command: >
       sh -c "rabbitmq-plugins enable rabbitmq_management && 
+            rabbitmq-plugins enable rabbitmq_delayed_message_exchange &&
+            rabbitmq-plugins enable rabbitmq_consistent_hash_exchange &&
+            rabbitmq-plugins enable rabbitmq_prometheus &&
+            rabbitmq-plugins enable rabbitmq_shovel &&
+            rabbitmq-plugins enable rabbitmq_shovel_management &&
             rabbitmq-server"
 
   notifier_migrate: # its a one-time run container, and should be exited with code 0 for successful executions of migrations
