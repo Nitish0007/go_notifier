@@ -1,5 +1,5 @@
 # Use full Go image with tools and git
-FROM golang:1.24
+FROM golang:1.25
 
 ENV ENV=development
 
