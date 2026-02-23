@@ -2,6 +2,8 @@ services:
   notifier_db:
     image: postgres:17
     platform: linux/amd64
+    networks:
+      - notifier_network
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -18,12 +20,16 @@ services:
   notifier_redis:
     image: redis:8.4-alpine
     platform: linux/amd64
+    networks:
+      - notifier_network
     ports: 
       - "6379:6379"
     volumes:
       - redis_data:/data
   
   notifier_rbmq:
+    networks:
+      - notifier_network
     build:
       context: .
       dockerfile: Dockerfile.rabbitmq
@@ -47,6 +53,8 @@ services:
 
   notifier_migrate: # its a one-time run container, and should be exited with code 0 for successful executions of migrations
     image: migrate/migrate # official image provided by golang-migrate maintainers
+    networks:
+      - notifier_network
     volumes:
       - ./db/migrations:/migrations
     environment:
@@ -67,6 +75,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    networks:
+      - notifier_network
     ports:
       - "8080:8080"
     volumes:
@@ -92,6 +102,8 @@ services:
       context: .
       dockerfile: Dockerfile
     command: ['./workers']
+    networks:
+      - notifier_network
     volumes:
       # - .:/app # line is commented out to avoid mounting the current directory and avoiding replacement of the built main file
       - ./configs:/app/configs
@@ -112,4 +124,8 @@ services:
 volumes:
   postgres_data:
   redis_data:
+
+networks:
+  notifier_network:
+    driver: bridge
 

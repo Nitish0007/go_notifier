@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -99,36 +100,42 @@ func (s *AccountService) InitializeAccount(ctx context.Context, accountData map[
 	return nil, errors.New("account data not provided")
 }
 
-func (s * AccountService) Login(ctx context.Context, payload map[string]any) (string, error) {
+func (s * AccountService) Login(ctx context.Context, payload map[string]any) (map[string]string, error) {
 	// validating payload
 	email, exists := payload["email"].(string)
 	if !exists || email == "" {
-		return "", errors.New("email not provided")
+		return nil, errors.New("email not provided")
 	}
 	email = strings.ToLower(email)
 
 	if !utils.ValidateEmail(email) {
-		return "", errors.New("invalid email format")
+		return nil, errors.New("invalid email format")
 	}
 
 	// find by email
 	account, err := s.AccRepo.FindAccountByEmail(ctx, email)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	
 	err = bcrypt.CompareHashAndPassword([]byte(account.EncryptedPassword), []byte(payload["password"].(string)))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	
 	apiKey, err := s.ApiKeyRepo.FindByAccountID(ctx, account.ID)
 	
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return apiKey.Key, nil
+	output := make(map[string]string)
+	output["auth_token"] = apiKey.Key
+	output["account_id"] = strconv.Itoa(account.ID) // convert int to string
+	output["email"] = account.Email
+	output["first_name"] = account.FirstName
+	output["last_name"] = account.LastName
+	return output, nil
 }
 
 // PRIVATE METHODS without receiver 

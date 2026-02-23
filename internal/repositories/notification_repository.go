@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/Nitish0007/go_notifier/internal/models"
 	"gorm.io/gorm"
@@ -88,18 +89,19 @@ func (r *NotificationRepository) GetNotificationsByObject(ctx context.Context, f
 
 func (r *NotificationRepository) UpdateNotification(ctx context.Context, fieldsToUpdate map[string]any, nObj *models.Notification) (*models.Notification, error) {
 	var udpatedNotification models.Notification
-	result := r.DB.WithContext(ctx).Model(&models.Notification{}).Where(nObj).Updates(fieldsToUpdate)
+	result := r.DB.WithContext(ctx).Model(&models.Notification{}).Where("id = ? AND account_id = ?", nObj.ID, nObj.AccountID).Updates(fieldsToUpdate)
 
 	if result.Error != nil {
 		return nil, result.Error
 	}
 
 	if result.RowsAffected == 0 {
-		return nil, gorm.ErrRecordNotFound
+		log.Printf(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>	No rows affected while updating notification")
+		return nObj, nil
 	}
 
 	// fetch updated record
-	err := r.DB.WithContext(ctx).Where(nObj).First(&udpatedNotification).Error
+	err := r.DB.WithContext(ctx).Where("id = ? AND account_id = ?", nObj.ID, nObj.AccountID).First(&udpatedNotification).Error
 	if err != nil {
 		return nil, err
 	}

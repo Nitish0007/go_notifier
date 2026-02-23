@@ -10,7 +10,7 @@ import (
 func RegisterPublicAccountRoutes(conn *gorm.DB, r chi.Router, h *handlers.AccountHandler) {
 	// public routes
 	r.Post("/signup", h.CreateAccountHandler)
-	r.Get("/login", h.LoginHandler)
+	r.Post("/login", h.LoginHandler)
 }
 
 func RegisterAccountRoutes(conn *gorm.DB, r chi.Router, h *handlers.AccountHandler){
