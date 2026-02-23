@@ -123,3 +123,31 @@ func (n *Notification) ToMap() (map[string]any, error) {
 
 	return result, nil
 }
+
+func (n *Notification) ResponseMap() (map[string]any, error) {
+	channelString, err := ChannelToString(n.Channel)
+	if err != nil {
+		return nil, err
+	}
+	statusString, err := StatusToString(n.Status)
+	if err != nil {
+		return nil, err	
+	}
+	return map[string]any{
+		"id": n.ID,
+		"account_id": n.AccountID,
+		"channel": channelString,
+		"recipient": n.Recipient,
+		"subject": n.Subject,
+		"body": n.Body,
+		"html_body": n.HtmlBody,
+		"status": statusString,
+		"metadata": n.Metadata,
+		"error_message": n.ErrorMessage,
+		"job_id": n.JobID,
+		"send_at": n.SendAt,
+		"sent_at": n.SentAt,
+		"created_at": n.CreatedAt,
+		"batch_id": n.BatchID,
+	}, nil
+}

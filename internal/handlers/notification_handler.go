@@ -72,8 +72,13 @@ func (h *NotificationHandler) CreateNotificationHandler(w http.ResponseWriter, r
 		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
+	responseMap, err := n.ResponseMap()
+	if err != nil {
+		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
 
-	utils.WriteJSONResponse(w, http.StatusCreated, n, "Notification created successfully")
+	utils.WriteJSONResponse(w, http.StatusCreated, responseMap, "Notification created successfully")
 }
 
 // TODO: add pagination and filtering

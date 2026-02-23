@@ -24,7 +24,14 @@ func SendEmail(to, from, fromName, toName, replyToEmail, replyToName, subject, b
 		log.Printf("Error in connecting to SMTP server: %v", err)
 		return err
 	}
-	defer client.Close()
+	
+	// to check if the client is closed before sending the email
+	defer func() {
+		log.Printf("Closing SMTP client")
+		if err := client.Close(); err != nil {
+			log.Printf("Warning: Error in closing SMTP client: %v", err)
+		}
+	}()
 
 	// start TLS
 	tlsConfig := &tls.Config{
@@ -65,8 +72,10 @@ func SendEmail(to, from, fromName, toName, replyToEmail, replyToName, subject, b
 	_, err = writer.Write(message)
 	if err != nil {
 		log.Printf("Error in writing email body: %v", err)
+		writer.Close()
 		return err
 	}
+	
 	err = writer.Close()
 	if err != nil {
 		log.Printf("Error in closing data writer: %v", err)
@@ -76,8 +85,9 @@ func SendEmail(to, from, fromName, toName, replyToEmail, replyToName, subject, b
 	// quit client
 	err = client.Quit()
 	if err != nil {
-		log.Printf("Error in quitting client: %v", err)
-		return err
+		// log.Printf("Error in quitting client: %v", err)
+		log.Printf("Warning: Error in quitting client: %v", err)
+		// return nil
 	}
 
 	log.Println("Email sent successfully")
