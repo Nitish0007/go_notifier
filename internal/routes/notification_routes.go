@@ -10,7 +10,7 @@ import (
 func RegisterNotificationRoutes(conn *gorm.DB, r chi.Router, h *handlers.NotificationHandler) {
 	r.Post("/notify", h.SendNotificationHandler) // create and send notification and return the notification id
 	// r.Post("/bulk_notify", h.SendBulkNotificationHandler) 
-	r.Post("/notification", h.CreateNotificationHandler) // create notification and return its object
+	r.Post("/notifications", h.CreateNotificationHandler) // create notification and return its object
 	r.Post("/trigger", h.SendNotificationByIDHandler) // send notification by id
 	r.Get("/notifications", h.GetNotificationsHandler) // get notifications in context of account
 }

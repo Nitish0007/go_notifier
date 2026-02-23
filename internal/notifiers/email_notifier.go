@@ -49,6 +49,12 @@ func (n *EmailNotifier) CreateNotification(ctx context.Context, payload map[stri
 		return nil, errors.New("channel is required and must be 'email'")
 	}
 
+	subject, exists := payload["subject"].(string)
+	if !exists || subject == "" {
+		return nil, errors.New("subject is required to create notification")
+	}
+	notification.Subject = subject
+
 	nChannel, err := models.StringToNotificationChannel(emailChannel)
 	if err != nil {
 		return nil, err
@@ -91,9 +97,7 @@ func (n *EmailNotifier) CreateNotification(ctx context.Context, payload map[stri
 		if _, ok := metadata["reply_to_name"]; !ok || metadata["reply_to_name"] == "" {
 			return nil, errors.New("reply_to_name is required in metadata")
 		}
-		if _, ok := metadata["subject"]; !ok || metadata["subject"] == "" {
-			return nil, errors.New("subject is required in metadata")
-		}
+		
 
 		// keeping only required fields in metadata
 		sanitizedMetadata["from_email"] = metadata["from_email"].(string)
@@ -102,7 +106,6 @@ func (n *EmailNotifier) CreateNotification(ctx context.Context, payload map[stri
 		sanitizedMetadata["reply_to_email"] = metadata["reply_to_email"].(string)
 		sanitizedMetadata["reply_to_name"] = metadata["reply_to_name"].(string)
 
-		notification.Subject = metadata["subject"].(string)
 		notification.Metadata = sanitizedMetadata
 		// notification.ErrorMessage = nil
 	} else {
