@@ -3,7 +3,7 @@ package models
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log"
 	"time"
 
 	"gorm.io/gorm"
@@ -42,7 +42,8 @@ type Configuration struct {
 }
 
 func (c *Configuration) BeforeSave(tx *gorm.DB) error {
-	fmt.Printf("config: %v\n", c)
+	log.Printf(">>>>>>>>>>>>>> before save hook\n")
+	log.Printf("config: %v\n", c)
 	if c.ConfigType == "" {
 		return errors.New("config type is required")
 	}

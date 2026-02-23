@@ -49,13 +49,21 @@ func (r *ConfigurationRepository) Index(ctx context.Context, accountID int) ([]*
 }
 
 func (r *ConfigurationRepository) Update(ctx context.Context, config *models.Configuration) error {
-	result := r.DB.WithContext(ctx).Model(&models.Configuration{}).Where("id = ? AND account_id = ?", config.ID, config.AccountID).Updates(config)
-	if result.Error != nil {
-		return result.Error
+	var existingConfig models.Configuration
+	err := r.DB.WithContext(ctx).Where("id = ? AND account_id = ?", config.ID, config.AccountID).First(&existingConfig).Error
+	if err != nil {
+		return err
 	}
-	if result.RowsAffected == 0 {
-		return fmt.Errorf("configuration not found with id: %d", config.ID)
+	
+	existingConfig.ConfigType = config.ConfigType
+	existingConfig.ConfigurationData = config.ConfigurationData
+	existingConfig.DefaultConfiguration = config.DefaultConfiguration
+
+	err = r.DB.WithContext(ctx).Save(&existingConfig).Error
+	if err != nil {
+		return err
 	}
+	config = &existingConfig
 	return nil
 }
 

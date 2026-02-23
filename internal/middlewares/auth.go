@@ -39,6 +39,7 @@ func AuthenticateRequest(conn *gorm.DB) func(http.Handler) http.Handler {
 
 			if apiKey.Key == "" || apiKey.Key != authKey {
 				utils.WriteErrorResponse(w, http.StatusUnauthorized, "Invalid Api Key used")
+				return
 			}
 
 			ctx = utils.SetCurrentAccountID(ctx, accountID)

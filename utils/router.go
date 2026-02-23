@@ -21,7 +21,11 @@ func InitRouter() *chi.Mux {
 	router.Use(middleware.URLFormat)                 // Parse extension from url and put it on request context, like .json, .xml
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders: []string{"Link"},
+		AllowCredentials: true,
+		MaxAge: 300, // Maximum value not ignored by any of major browsers
 	}))
 
 	router.Get("/ping", func(w http.ResponseWriter, r *http.Request) {

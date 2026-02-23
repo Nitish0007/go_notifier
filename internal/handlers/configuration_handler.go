@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
-	"fmt"
+	"log"
 
 	"github.com/Nitish0007/go_notifier/internal/models"
 	"github.com/Nitish0007/go_notifier/internal/services"
@@ -128,15 +128,12 @@ func (h *ConfigurationHandler) UpdateConfigurationHandler(w http.ResponseWriter,
 
 	// validate configuration data using the generic validator
 	validator := validators.NewModelValidator[models.Configuration]()
-	_, err = validator.ValidateFromMap(configData)
-	if err != nil {
-		fmt.Printf("error: %v\n", err)
-		utils.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-		return
-	}
+	config, err := validator.ValidateFromMap(configData)
 
+	log.Printf(">>>>>>>>>>>>>> config: %+v", config)
+	
 	ctx := r.Context()
-	updatedConfig, err := h.configurationService.UpdateConfiguration(ctx, configData)
+	updatedConfig, err := h.configurationService.UpdateConfiguration(ctx, config)
 	if err != nil {
 		utils.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
 		return

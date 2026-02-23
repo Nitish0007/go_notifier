@@ -14,6 +14,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       retries: 5
+    networks:
+      - notifier_network
 
   notifier_redis:
     image: redis:8.4-alpine
@@ -22,6 +24,8 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    networks:
+      - notifier_network
   
   notifier_rbmq:
     build:
@@ -47,6 +51,8 @@ services:
       test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
       interval: 5s
       retries: 5
+    networks:
+      - notifier_network
 
   notifier_migrate: # its a one-time run container, and should be exited with code 0 for successful executions of migrations
     image: migrate/migrate # official image provided by golang-migrate maintainers
@@ -63,6 +69,8 @@ services:
     depends_on:
       notifier_db:
         condition: service_healthy
+    networks:
+      - notifier_network
 
   notifier-api:
     platform: linux/amd64
@@ -95,6 +103,8 @@ services:
         condition: service_started
       notifier_rbmq:
         condition: service_healthy
+    networks:
+      - notifier_network
 
   notifier-workers:
     platform: linux/amd64
@@ -126,41 +136,46 @@ services:
       # [
       #   "./workers"
       # ]
+    networks:
+      - notifier_network
 
 # Prometheus & Grafana as docker images only for development enviroment
-  prometheus:
-    image: prom/prometheus:latest
-    platform: linux/amd64
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-    depends_on:
-      notifier_rbmq:
-        condition: service_started
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   platform: linux/amd64
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+  #     - prometheus_data:/prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #   depends_on:
+  #     notifier_rbmq:
+  #       condition: service_started
 
-  grafana:
-    image: grafana/grafana:latest
-    platform: linux/amd64
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
-    volumes:
-      - grafana_data:/var/lib/grafana
-    depends_on:
-      prometheus:
-        condition: service_started
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   platform: linux/amd64
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=admin
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #     - GF_USERS_ALLOW_SIGN_UP=false
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #   depends_on:
+  #     prometheus:
+  #       condition: service_started
 
 volumes:
   postgres_data:
   redis_data:
-  prometheus_data:
-  grafana_data:
+  # prometheus_data:
+  # grafana_data:
+networks:
+  notifier_network:
+    driver: bridge
 

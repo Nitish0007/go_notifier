@@ -74,16 +74,13 @@ func (h *AccountHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	apiKey, err := h.accountService.Login(ctx, loginData)
+	loginResponse, err := h.accountService.Login(ctx, loginData)
 
 	if err != nil {
 		utils.WriteErrorResponse(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	data := make(map[string]string)
-	data["auth_token"] = apiKey
-
-	utils.WriteJSONResponse(w, http.StatusOK, data, "Logged in successfully")
+	utils.WriteJSONResponse(w, http.StatusOK, loginResponse, "Logged in successfully")
 
 }
