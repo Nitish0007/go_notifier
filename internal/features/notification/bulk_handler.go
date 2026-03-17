@@ -1,17 +1,16 @@
-package handlers
+package notification
 
 // import (
 // 	"net/http"
 
 // 	"github.com/Nitish0007/go_notifier/utils"
-// 	"github.com/Nitish0007/go_notifier/internal/services"
 // )
 
 // type BulkNotificationHandler struct {
-// 	bulkNotificationService *services.BulkNotificationService
+// 	bulkNotificationService *NotificationService
 // }
 
-// func NewBulkNotificationHandler(s *services.BulkNotificationService) *BulkNotificationHandler {
+// func NewBulkNotificationHandler(s *NotificationService) *BulkNotificationHandler {
 // 	return &BulkNotificationHandler{
 // 		bulkNotificationService: s,
 // 	}

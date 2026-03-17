@@ -8,10 +8,11 @@ import (
 	"crypto/tls"
 	"github.com/google/uuid"
 
-	"github.com/Nitish0007/go_notifier/internal/models"
+	// "github.com/Nitish0007/go_notifier/internal/models"
+	"github.com/Nitish0007/go_notifier/internal/shared/dto"
 )
 
-func SendEmail(to, from, fromName, toName, replyToEmail, replyToName, subject, body, htmlBody string, smtpConfig *models.SMTPConfiguration) error {
+func SendEmail(to, from, fromName, toName, replyToEmail, replyToName, subject, body, htmlBody string, smtpConfig *dto.SMTPConfiguration) error {
 	auth := smtp.PlainAuth("", smtpConfig.Username, smtpConfig.Password, smtpConfig.Host)
 
 	// build email message
