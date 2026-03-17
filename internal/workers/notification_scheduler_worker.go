@@ -6,9 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/Nitish0007/go_notifier/internal/models"
-	"github.com/Nitish0007/go_notifier/internal/repositories"
-	"github.com/Nitish0007/go_notifier/internal/services"
+	"github.com/Nitish0007/go_notifier/internal/features/notification"
 	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
 	rbmq "github.com/rabbitmq/amqp091-go"
 	"gorm.io/gorm"
@@ -25,7 +23,7 @@ type NotificationSchedulerWorker struct {
 	ctx      context.Context
 }
 
-func NewNotificationSchedulerWorker(db *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, s *services.BulkNotificationService) *NotificationSchedulerWorker {
+func NewNotificationSchedulerWorker(db *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, s *notification.NotificationService) *NotificationSchedulerWorker {
 	q, err := rabbitmq_utils.NewQueue(deliveryQueueName)
 	if err != nil {
 		return nil
@@ -103,12 +101,12 @@ func (w *NotificationSchedulerWorker) pollNotifications() error {
 	return nil
 }
 
-func (w *NotificationSchedulerWorker) fetchNotifications() ([]*models.Notification, error) {
-	repo := repositories.NewNotificationRepository(w.dbConn)
+func (w *NotificationSchedulerWorker) fetchNotifications() ([]*notification.Notification, error) {
+	repo := notification.NewNotificationRepository(w.dbConn)
 	filters := map[string]any{
 		// NOTE: this is the status of the notifications that are to be scheduled
 		// using Enqueued status for development purposes
-		"status": models.Pending,
+		"status": notification.Pending,
 	}
 
 	// enqueue 500 notifications at a time to avoid overwhelming the queue
@@ -123,8 +121,8 @@ func (w *NotificationSchedulerWorker) fetchNotifications() ([]*models.Notificati
 	return notifications, nil
 }
 
-func (w *NotificationSchedulerWorker) pushNotificationsToDeliveryQueue(notifications []*models.Notification) error {
-	repo := repositories.NewNotificationRepository(w.dbConn)
+func (w *NotificationSchedulerWorker) pushNotificationsToDeliveryQueue(notifications []*notification.Notification) error {
+	repo := notification.NewNotificationRepository(w.dbConn)
 	for _, n := range notifications {
 		// create job message
 		payload := map[string]any{"notificationID": n.ID, "accountID": n.AccountID}
@@ -145,7 +143,7 @@ func (w *NotificationSchedulerWorker) pushNotificationsToDeliveryQueue(notificat
 		}
 
 		fieldsToUpdate := map[string]any{
-			"status": models.Enqueued,
+			"status": notification.Enqueued,
 		}
 		_, err = repo.UpdateNotification(w.ctx, fieldsToUpdate, n)
 		if err != nil {

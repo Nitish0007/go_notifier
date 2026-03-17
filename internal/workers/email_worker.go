@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/Nitish0007/go_notifier/internal/models"
-	"github.com/Nitish0007/go_notifier/internal/repositories"
-	"github.com/Nitish0007/go_notifier/internal/services"
-	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
-	rbmq "github.com/rabbitmq/amqp091-go"
 	"gorm.io/gorm"
+	rbmq "github.com/rabbitmq/amqp091-go"
+	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
+	"github.com/Nitish0007/go_notifier/internal/shared/dto"
+	"github.com/Nitish0007/go_notifier/internal/features/notification"
+	"github.com/Nitish0007/go_notifier/internal/features/configuration"
 )
 
 var (
@@ -22,16 +22,16 @@ type EmailWorker struct {
 	rbmqConn            *rbmq.Connection
 	ctx                 context.Context
 	queue               *rabbitmq_utils.Queue
-	notificationService *services.NotificationService
-	configurationRepo   *repositories.ConfigurationRepository
+	notificationService *notification.NotificationService
+	configurationRepo   *configuration.ConfigurationRepository
 }
 
-func NewEmailWorker(dbConn *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, notificationService *services.NotificationService) *EmailWorker {
+func NewEmailWorker(dbConn *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, notificationService *notification.NotificationService) *EmailWorker {
 	q, err := rabbitmq_utils.NewQueue(notificationDeliveryQueueName)
 	if err != nil {
 		return nil
 	}
-	configurationRepo := repositories.NewConfigurationRepository(dbConn)
+	configurationRepo := configuration.NewConfigurationRepository(dbConn)
 	return &EmailWorker{
 		dbConn:              dbConn,
 		rbmqConn:            rbmqConn,
@@ -99,7 +99,7 @@ func (w *EmailWorker) Consume() {
 			accountID := int(accountIDFloat64)
 			configFilter := map[string]any{
 				"account_id":            accountID,
-				"config_type":           string(models.SMTPConfig),
+				"config_type":           string(configuration.SMTPConfig),
 				"default_configuration": true,
 			}
 			config, err := w.configurationRepo.GetByFields(w.ctx, configFilter)
@@ -115,13 +115,13 @@ func (w *EmailWorker) Consume() {
 				msg.Ack(false)
 				continue
 			}
-			if config.ConfigType != string(models.SMTPConfig) {
+			if config.ConfigType != string(configuration.SMTPConfig) {
 				log.Printf("Configuration is not an email configuration: %v", config.ConfigType)
 				w.queue.PushToDLQ(jobMsg)
 				msg.Ack(false)
 				continue
 			}
-			smtpConfig := &models.SMTPConfiguration{}
+			smtpConfig := &configuration.SMTPConfiguration{}
 			jsonData, err := json.Marshal(config.ConfigurationData)
 			if err != nil {
 				log.Printf("Error in marshalling SMTP configuration: %v", err)
@@ -135,7 +135,13 @@ func (w *EmailWorker) Consume() {
 				msg.Ack(false)
 				continue
 			}
-			err = w.notificationService.SendNotification(w.ctx, notificationID, accountID, smtpConfig)
+			err = w.notificationService.SendNotification(w.ctx, notificationID, accountID, &dto.SMTPConfiguration{
+				Host:     smtpConfig.Host,
+				Port:     smtpConfig.Port,
+				Username: smtpConfig.Username,
+				Password: smtpConfig.Password,
+				From:     smtpConfig.From,
+			})
 			if err != nil {
 				log.Printf("Error in sending notification: %v", err)
 				w.queue.PushToRetry(jobMsg)

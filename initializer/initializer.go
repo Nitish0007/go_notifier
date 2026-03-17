@@ -1,59 +1,60 @@
 package initializer
 
 import (
-	"github.com/go-chi/chi/v5"
+	"os"
+	"log"
+	"os/signal"
+	"syscall"
+	"context"
 	"gorm.io/gorm"
+	"github.com/go-chi/chi/v5"
+	"github.com/Nitish0007/go_notifier/initializer/container"
+	"github.com/Nitish0007/go_notifier/internal/features/account"
+	"github.com/Nitish0007/go_notifier/internal/features/notification"
+	"github.com/Nitish0007/go_notifier/internal/features/configuration"
+	"github.com/Nitish0007/go_notifier/internal/common/middlewares"
 
-	// "github.com/jackc/pgx/v5/pgxpool"
-
-	"github.com/Nitish0007/go_notifier/internal/handlers"
-	"github.com/Nitish0007/go_notifier/internal/middlewares"
-	"github.com/Nitish0007/go_notifier/internal/notifiers"
-	"github.com/Nitish0007/go_notifier/internal/repositories"
-	"github.com/Nitish0007/go_notifier/internal/routes"
-	"github.com/Nitish0007/go_notifier/internal/services"
+	rbmq "github.com/rabbitmq/amqp091-go"
+	"github.com/Nitish0007/go_notifier/internal/workers"
 )
 
-func InititalizeApplication(db *gorm.DB, router *chi.Mux) {
-	// initializing repositories, services and handlers by injecting dependencies
+func InitializeApplication(db *gorm.DB, router *chi.Mux) {
+	// Initialize container with all dependencies
+	c := container.NewContainer(db)
 
-	// Intialize Repositories by injecting db connection dependency
-	accRepo := repositories.NewAccountRepository(db)
-	apiKeyRepo := repositories.NewApiKeyRepository(db)
-	notificationRepo := repositories.NewNotificationRepository(db)
-	notificationBatchRepo := repositories.NewNotificationBatchRepository(db)
-	notificationBatchErrorRepo := repositories.NewNotificationBatchErrorRepo(db)
-	configurationRepo := repositories.NewConfigurationRepository(db)
-
-	// intialize notifiers
-	emailNotifier := notifiers.NewEmailNotifier(notificationRepo)
-
-	// Initialize Services by injecting corresponding repository dependency
-	accService := services.NewAccountService(accRepo, apiKeyRepo)
-	configurationService := services.NewConfigurationService(configurationRepo)
-	notificationService := services.NewNotificationService(
-		[]notifiers.Notifier{emailNotifier},
-		notificationRepo,
-	)
-	bulkNotificationService := services.NewBulkNotificationService(notificationRepo, notificationBatchRepo, notificationBatchErrorRepo)
-
-	// Initialize Handlers by injecting corresponding service dependency
-	accountHandler := handlers.NewAccountHandler(accService)
-	notificationHandler := handlers.NewNotificationHandler(notificationService)
-	configurationHandler := handlers.NewConfigurationHandler(configurationService)
-	bulkNotificationHandler := handlers.NewBulkNotificationHandler(bulkNotificationService)
-	// Register Routes by injecting corresponding handler dependency
+	// register routes
 	router.Route("/api/v1", func(r chi.Router) {
-		routes.RegisterPublicAccountRoutes(db, r, accountHandler)
+		account.RegisterPublicAccountRoutes(db, r, c.AccountHandler)
+		// account.RegisterAccountRoutes(db, r, c.AccountHandler)
 
-		// protected routes
-		r.Route("/{account_id}", func(authenticated chi.Router) {
-			authenticated.Use(middlewares.AuthenticateRequest(db))
-
-			routes.RegisterAccountRoutes(db, authenticated, accountHandler)
-			routes.RegisterNotificationRoutes(db, authenticated, notificationHandler)
-			routes.RegisterBulkNotificationRoutes(db, authenticated, bulkNotificationHandler)
-			routes.RegisterConfigurationRoutes(db, authenticated, configurationHandler)
+		r.Route("/{account_id}", func(r chi.Router) {
+			r.Use(middlewares.AuthenticateRequest(db))
+			notification.RegisterNotificationRoutes(db, r, c.NotificationHandler)
+			configuration.RegisterConfigurationRoutes(db, r, c.ConfigurationHandler)
 		})
 	})
+}
+
+func InitializeWorkers(db *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context) {
+	// Initialize container with all dependencies
+	c := container.NewContainer(db)
+
+	// Initialize workers by injecting dependencies
+	schedulerWorker := workers.NewNotificationSchedulerWorker(db, rbmqConn, ctx, c.NotificationService)
+	emailWorker := workers.NewEmailWorker(db, rbmqConn, ctx, c.NotificationService)
+	// notificationBatchWorker := workers.NewNotificationBatchWorker(db, rbmqConn, ctx, c.NotificationService)
+
+
+	log.Printf(">>>>>>>>>>>>>>>>> calling consume methods of all workers\n\n")
+	workers := []workers.Worker{schedulerWorker, emailWorker}
+	for _, w := range workers {
+		go w.Consume()
+	}
+	log.Printf(">>>>>>>>>>>>>>>>> consume methods called successfully for all workers\n\n")
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
+
+	log.Println("Workers stopped successfully")
 }

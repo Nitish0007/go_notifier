@@ -43,7 +43,7 @@ func main() {
 		}
 	}
 
-	db, err := utils.ConnectDB()
+	db, err := utils.ConnectDB(env)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -55,9 +55,10 @@ func main() {
 	defer sqlDB.Close()
 
 	r := utils.InitRouter()
-	initializer.InititalizeApplication(db, r)
+	// initializer.InititalizeApplication(db, r)
+	initializer.InitializeApplication(db, r)
 
-	// PrintRoutes(r)
+	PrintRoutes(r)
 
 	http.ListenAndServe(":8080", r)
 }
