@@ -53,7 +53,7 @@ func (r *ConfigurationRepository) Update(ctx context.Context, config *Configurat
 	if err != nil {
 		return err
 	}
-	
+
 	existingConfig.ConfigType = config.ConfigType
 	existingConfig.ConfigurationData = config.ConfigurationData
 	existingConfig.DefaultConfiguration = config.DefaultConfiguration
@@ -62,7 +62,7 @@ func (r *ConfigurationRepository) Update(ctx context.Context, config *Configurat
 	if err != nil {
 		return err
 	}
-	config = &existingConfig
+	*config = existingConfig
 	return nil
 }
 
@@ -77,7 +77,7 @@ func (r *ConfigurationRepository) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
-	func (r *ConfigurationRepository) GetByFields(ctx context.Context, fields map[string]any) (*Configuration, error) {
+func (r *ConfigurationRepository) GetByFields(ctx context.Context, fields map[string]any) (*Configuration, error) {
 	var config Configuration
 	err := r.DB.WithContext(ctx).Where(fields).First(&config).Error
 	if err != nil {

@@ -1,9 +1,9 @@
 services:
   notifier_db:
-    image: postgres:17
+    image: postgres:18-alpine
     platform: linux/amd64
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
       # - ./scripts/init_test_db.sql:/docker-entrypoint-initdb.d/init_test_db.sql # this is a one-time script if integartion test are needed
     ports:
       - "5432:5432"
@@ -57,16 +57,13 @@ services:
 
   notifier_migrate: # its a one-time run container, and should be exited with code 0 for successful executions of migrations
     image: migrate/migrate # official image provided by golang-migrate maintainers
+    env_file:
+      - .env.development # .env for production environment
     volumes:
       - ./db/migrations:/migrations
-    environment:
-      DATABASE_URL: postgres://postgres:12345678@notifier_db:5432/notifier_dev_db?sslmode=disable
-    command:
-      [
-        "-path", "/migrations",
-        "-database", "postgres://postgres:12345678@notifier_db:5432/notifier_dev_db?sslmode=disable",
-        "up"
-      ]
+      - ./scripts/run_migrations.sh:/run_migrations.sh
+    entrypoint: ["bin/sh"]
+    command: ["/run_migrations.sh"]
     depends_on:
       notifier_db:
         condition: service_healthy
@@ -85,7 +82,7 @@ services:
       - .:/app
       # - ./.air.toml:/app/.air.toml:ro # ro here is for read-only to prevent overwriting of this file
       - ./configs:/app/configs
-      - postgres_data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
       - redis_data:/data
     environment:
       ENV: development
@@ -116,7 +113,7 @@ services:
     volumes:
       - .:/app
       - ./configs:/app/configs
-      - postgres_data:/var/lib/postgresql/data
+      - pg_data:/var/lib/postgresql/data
       - redis_data:/data
     environment:
       ENV: development
@@ -172,7 +169,7 @@ services:
   #       condition: service_started
 
 volumes:
-  postgres_data:
+  pg_data:
   redis_data:
   # prometheus_data:
   # grafana_data:

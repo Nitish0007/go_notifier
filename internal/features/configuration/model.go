@@ -2,9 +2,9 @@ package configuration
 
 import (
 	// "log"
-	"time"
-	"errors"
 	"encoding/json"
+	"errors"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -17,7 +17,7 @@ const (
 )
 
 type ConfigData struct {
-	SMTPConfiguration 	SMTPConfiguration 	`json:"smtp_configuration" validate:"omitempty"`
+	SMTPConfiguration   SMTPConfiguration   `json:"smtp_configuration" validate:"omitempty"`
 	WebAppConfiguration WebAppConfiguration `json:"web_app_configuration" validate:"omitempty"`
 }
 
@@ -54,7 +54,7 @@ type Configuration struct {
 	ID                   int            `json:"id" gorm:"primaryKey" validate:"-"`
 	AccountID            int            `json:"account_id" gorm:"not null;index" validate:"required,gt=0"`
 	DefaultConfiguration bool           `json:"default_configuration" gorm:"default:false" validate:"-"`
-	ConfigurationData    map[string]any `json:"configuration_data" gorm:"type:jsonb;default:'{}'::jsonb;serializer:json" validate:"required"`
+	ConfigurationData    map[string]any `json:"configuration_data" gorm:"serializer:json" validate:"required"`
 	ConfigType           string         `json:"config_type" gorm:"not null" validate:"required,oneof=smtp in_app"`
 	CreatedAt            time.Time      `json:"created_at" gorm:"autoCreateTime" validate:"-"`
 	UpdatedAt            time.Time      `json:"updated_at" gorm:"autoUpdateTime" validate:"-"`
@@ -90,12 +90,16 @@ func NewConfiguration(payload *ConfigurationRequest) (*Configuration, error) {
 		configData = make(map[string]any)
 	}
 
-	return &Configuration{
+	cfg := &Configuration{
 		AccountID:            accountID,
 		DefaultConfiguration: defaultConfig,
 		ConfigType:           string(configType),
 		ConfigurationData:    configData,
-	}, nil
+	}
+	if payload.Configuration.ID > 0 {
+		cfg.ID = payload.Configuration.ID
+	}
+	return cfg, nil
 }
 
 func (c *Configuration) ToSMTPConfiguration() (*SMTPConfiguration, error) {

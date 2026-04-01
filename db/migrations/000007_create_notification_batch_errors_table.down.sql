@@ -1,1 +1,0 @@
--- DROP TABLE notification_batch_errors;

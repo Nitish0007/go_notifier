@@ -1,1 +1,1 @@
--- DROP TABLE configurations;
+DROP TABLE IF EXISTS configurations;

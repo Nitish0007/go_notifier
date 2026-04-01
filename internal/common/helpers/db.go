@@ -5,7 +5,10 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/Nitish0007/go_notifier/internal/features/account"
-	"github.com/Nitish0007/go_notifier/internal/features/api_key"
+	"github.com/Nitish0007/go_notifier/internal/features/apiKey"
+	"github.com/Nitish0007/go_notifier/internal/features/configuration"
+	"github.com/Nitish0007/go_notifier/internal/features/contact"
+	"github.com/Nitish0007/go_notifier/internal/features/emailcontact"
 	"github.com/Nitish0007/go_notifier/utils"
 )
 
@@ -25,11 +28,13 @@ func SetupUnitTestsDB() (*gorm.DB, error) {
 	return db, nil
 }
 
-// AutoMigrate runs GORM AutoMigrate on the provided database
-// Migrates Account and ApiKey models
+// AutoMigrate runs GORM AutoMigrate on the provided database for in-memory SQLite tests.
 func AutoMigrate(db *gorm.DB) error {
 	return db.AutoMigrate(
 		&account.Account{},
-		&api_key.ApiKey{},
+		&apiKey.ApiKey{},
+		&contact.Contact{},
+		&emailcontact.EmailContact{},
+		&configuration.Configuration{},
 	)
 }
