@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"gorm.io/gorm"
 	"github.com/go-chi/chi/v5"
+	"gorm.io/gorm"
 
+	"github.com/Nitish0007/go_notifier/internal/features/apiKey"
 	"github.com/Nitish0007/go_notifier/utils"
-	"github.com/Nitish0007/go_notifier/internal/features/api_key"
 )
 
 func AuthenticateRequest(conn *gorm.DB) func(http.Handler) http.Handler {
@@ -28,7 +28,7 @@ func AuthenticateRequest(conn *gorm.DB) func(http.Handler) http.Handler {
 			}
 
 			ctx := r.Context()
-			repo := api_key.NewApiKeyRepository(conn)
+			repo := apiKey.NewApiKeyRepository(conn)
 
 			apiKey, err := repo.FindByAccountID(ctx, accountID)
 			if err != nil {

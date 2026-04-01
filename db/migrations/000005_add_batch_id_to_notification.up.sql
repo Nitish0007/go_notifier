@@ -1,2 +1,0 @@
-ALTER TABLE notifications
-ADD COLUMN batch_id UUID DEFAULT NULL;

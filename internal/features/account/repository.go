@@ -2,20 +2,21 @@ package account
 
 import (
 	"context"
+
 	"gorm.io/gorm"
 
 	"github.com/Nitish0007/go_notifier/utils"
-	"github.com/Nitish0007/go_notifier/internal/features/api_key"
+	"github.com/Nitish0007/go_notifier/internal/features/apiKey"
 )
 
 type AccountRepository struct {
-	DB *gorm.DB
-	ApiKeyRepository *api_key.ApiKeyRepository
+	DB               *gorm.DB
+	ApiKeyRepository *apiKey.ApiKeyRepository
 }
 
-func NewAccountRepository(conn *gorm.DB, apiKeyRepository *api_key.ApiKeyRepository) *AccountRepository {
+func NewAccountRepository(conn *gorm.DB, apiKeyRepository *apiKey.ApiKeyRepository) *AccountRepository {
 	return &AccountRepository{
-		DB: conn,
+		DB:               conn,
 		ApiKeyRepository: apiKeyRepository,
 	}
 }
@@ -31,14 +32,14 @@ func (r *AccountRepository) Create(ctx context.Context, account *Account) error 
 
 // creates a new account and API key within a transaction as a atomic operation.
 func (r *AccountRepository) RegisterAccount(ctx context.Context, account *Account) error {
-  result := r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+	result := r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(account).Error; err != nil {
 			return err
 		}
 
 		// initialize API key
-		apiKey := &api_key.ApiKey{
-			Key:      utils.GenerateAlphaNumericKey(),
+		apiKey := &apiKey.ApiKey{
+			Key:       utils.GenerateAlphaNumericKey(),
 			AccountID: account.ID,
 		}
 		// create API key
@@ -52,14 +53,13 @@ func (r *AccountRepository) RegisterAccount(ctx context.Context, account *Accoun
 }
 
 func (r *AccountRepository) GetApiKeyByAccountID(ctx context.Context, accountID int) (string, error) {
-	var apiKey api_key.ApiKey
+	var apiKey apiKey.ApiKey
 	result := r.DB.WithContext(ctx).Where("account_id = ?", accountID).First(&apiKey)
 	if result.Error != nil {
 		return "", result.Error
 	}
 	return apiKey.Key, nil
 }
-
 func (r *AccountRepository) FindAccountByEmail(ctx context.Context, email string) (Account, error) {
 	var account Account
 	result := r.DB.WithContext(ctx).Where("email = ?", email).First(&account)

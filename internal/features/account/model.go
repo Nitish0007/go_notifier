@@ -2,6 +2,7 @@ package account
 
 import (
 	"time"
+	"github.com/Nitish0007/go_notifier/internal/features/apiKey"
 )
 
 type Account struct {
@@ -13,4 +14,7 @@ type Account struct {
 	IsActive          bool      `json:"is_active" gorm:"column:is_active;default:true" validate:"-"`
 	CreatedAt         time.Time `json:"created_at" gorm:"column:created_at;autoCreateTime" validate:"-"`
 	UpdatedAt         time.Time `json:"updated_at" gorm:"column:updated_at;autoUpdateTime" validate:"-"`
+	
+	// associations
+	ApiKeys           []*apiKey.ApiKey `json:"-" gorm:"foreignKey:AccountID;references:ID" validate:"-"`
 }

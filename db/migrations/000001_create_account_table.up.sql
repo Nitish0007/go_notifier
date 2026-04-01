@@ -10,4 +10,4 @@ CREATE TABLE accounts (
   
   CONSTRAINT email_unique UNIQUE (email),
   CONSTRAINT email_format CHECK (email ~ '^[^@]+@[^@]+\.[^@]+$')
-)
+);
