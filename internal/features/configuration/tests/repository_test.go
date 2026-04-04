@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 
-	"github.com/Nitish0007/go_notifier/internal/common/helpers"
+	"github.com/Nitish0007/go_notifier/internal/common/database"
 	"github.com/Nitish0007/go_notifier/internal/features/account"
 	"github.com/Nitish0007/go_notifier/internal/features/apiKey"
 	"github.com/Nitish0007/go_notifier/internal/features/configuration"
@@ -30,9 +30,9 @@ func seedAccount(t *testing.T, db *gorm.DB) *account.Account {
 }
 
 func TestConfigurationRepository_Create_And_Index(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	acc := seedAccount(t, db)
 	repo := configuration.NewConfigurationRepository(db)
@@ -56,9 +56,9 @@ func TestConfigurationRepository_Create_And_Index(t *testing.T) {
 }
 
 func TestConfigurationRepository_GetByAccountID_DefaultTrue(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	acc := seedAccount(t, db)
 	repo := configuration.NewConfigurationRepository(db)
@@ -78,9 +78,9 @@ func TestConfigurationRepository_GetByAccountID_DefaultTrue(t *testing.T) {
 }
 
 func TestConfigurationRepository_GetByAccountIDAndConfigType(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	acc := seedAccount(t, db)
 	repo := configuration.NewConfigurationRepository(db)
@@ -99,9 +99,9 @@ func TestConfigurationRepository_GetByAccountIDAndConfigType(t *testing.T) {
 }
 
 func TestConfigurationRepository_Update(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	acc := seedAccount(t, db)
 	repo := configuration.NewConfigurationRepository(db)
@@ -123,9 +123,9 @@ func TestConfigurationRepository_Update(t *testing.T) {
 }
 
 func TestConfigurationRepository_Delete(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	acc := seedAccount(t, db)
 	repo := configuration.NewConfigurationRepository(db)
@@ -144,9 +144,9 @@ func TestConfigurationRepository_Delete(t *testing.T) {
 }
 
 func TestConfigurationRepository_GetByFields(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	acc := seedAccount(t, db)
 	repo := configuration.NewConfigurationRepository(db)

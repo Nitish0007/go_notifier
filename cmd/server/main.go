@@ -7,7 +7,8 @@ import (
 	"net/http"
 
 	"github.com/Nitish0007/go_notifier/initializer"
-	"github.com/Nitish0007/go_notifier/utils"
+	"github.com/Nitish0007/go_notifier/internal/common/router"
+	"github.com/Nitish0007/go_notifier/internal/common/database"
 	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
 )
@@ -43,7 +44,7 @@ func main() {
 		}
 	}
 
-	db, err := utils.ConnectDB(env)
+	db, err := database.Connect(env)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -54,11 +55,11 @@ func main() {
 	}
 	defer sqlDB.Close()
 
-	r := utils.InitRouter()
+	r := router.InitRouter()
 	// initializer.InititalizeApplication(db, r)
 	initializer.InitializeApplication(db, r)
 
-	PrintRoutes(r)
+	// PrintRoutes(r)
 
 	http.ListenAndServe(":8080", r)
 }

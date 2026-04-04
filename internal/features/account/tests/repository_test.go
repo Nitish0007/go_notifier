@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Nitish0007/go_notifier/internal/common/helpers"
+	"github.com/Nitish0007/go_notifier/internal/common/database"
 	"github.com/Nitish0007/go_notifier/internal/features/account"
 	"github.com/Nitish0007/go_notifier/internal/features/apiKey"
 	"github.com/stretchr/testify/require"
@@ -12,11 +12,11 @@ import (
 
 func TestAccountRepository_Create_Success(t *testing.T) {
 	// ARRANGE: Setup test database
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err, "Failed to setup test database")
 
 	// Migrate account and api key tables
-	err = helpers.AutoMigrate(db)
+	err = database.AutoMigrate(db)
 	require.NoError(t, err, "Failed to migrate tables")
 
 	// Create repositories
@@ -40,10 +40,10 @@ func TestAccountRepository_Create_Success(t *testing.T) {
 }
 
 func TestAccountRepository_Create_DuplicateEmailFails(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err, "Failed to setup test database")
 
-	err = helpers.AutoMigrate(db)
+	err = database.AutoMigrate(db)
 	require.NoError(t, err, "Failed to migrate tables")
 
 	apiKeyRepo := apiKey.NewApiKeyRepository(db)
@@ -69,10 +69,10 @@ func TestAccountRepository_Create_DuplicateEmailFails(t *testing.T) {
 }
 
 func TestAccountRepository_RegisterAccount_Success(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err, "Failed to setup test database")
 
-	err = helpers.AutoMigrate(db)
+	err = database.AutoMigrate(db)
 	require.NoError(t, err, "Failed to migrate tables")
 
 	apiKeyRepo := apiKey.NewApiKeyRepository(db)
@@ -100,10 +100,10 @@ func TestAccountRepository_RegisterAccount_Success(t *testing.T) {
 }
 
 func TestAccountRepository_FindAccountByEmail_Success(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
 
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	apiKeyRepo := apiKey.NewApiKeyRepository(db)
 	repo := account.NewAccountRepository(db, apiKeyRepo)
@@ -124,9 +124,9 @@ func TestAccountRepository_FindAccountByEmail_Success(t *testing.T) {
 }
 
 func TestAccountRepository_FindAccountByEmail_NotFound(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	apiKeyRepo := apiKey.NewApiKeyRepository(db)
 	repo := account.NewAccountRepository(db, apiKeyRepo)
@@ -136,9 +136,9 @@ func TestAccountRepository_FindAccountByEmail_NotFound(t *testing.T) {
 }
 
 func TestAccountRepository_GetApiKeyByAccountID_Success(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	apiKeyRepo := apiKey.NewApiKeyRepository(db)
 	repo := account.NewAccountRepository(db, apiKeyRepo)

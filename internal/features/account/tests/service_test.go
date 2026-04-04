@@ -4,16 +4,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Nitish0007/go_notifier/internal/common/helpers"
+	"github.com/Nitish0007/go_notifier/internal/common/database"
 	"github.com/Nitish0007/go_notifier/internal/features/account"
 	"github.com/Nitish0007/go_notifier/internal/features/apiKey"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAccountService_CreateAccount_Success(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	apiKeyRepo := apiKey.NewApiKeyRepository(db)
 	accRepo := account.NewAccountRepository(db, apiKeyRepo)
@@ -37,9 +37,9 @@ func TestAccountService_CreateAccount_Success(t *testing.T) {
 }
 
 func TestAccountService_CreateAccount_PasswordMismatch(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	svc := account.NewAccountService(account.NewAccountRepository(db, apiKey.NewApiKeyRepository(db)))
 
@@ -55,9 +55,9 @@ func TestAccountService_CreateAccount_PasswordMismatch(t *testing.T) {
 }
 
 func TestAccountService_Login_Success(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	apiKeyRepo := apiKey.NewApiKeyRepository(db)
 	accRepo := account.NewAccountRepository(db, apiKeyRepo)
@@ -83,9 +83,9 @@ func TestAccountService_Login_Success(t *testing.T) {
 }
 
 func TestAccountService_Login_WrongPassword(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	apiKeyRepo := apiKey.NewApiKeyRepository(db)
 	accRepo := account.NewAccountRepository(db, apiKeyRepo)

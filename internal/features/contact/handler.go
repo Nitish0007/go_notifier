@@ -3,8 +3,8 @@ package contact
 import (
 	"net/http"
 	"strconv"
-	"github.com/Nitish0007/go_notifier/utils"
 	"github.com/Nitish0007/go_notifier/internal/shared/api"
+	"github.com/Nitish0007/go_notifier/internal/shared/sharedhelper"
 )
 
 type ContactHandler struct {
@@ -19,7 +19,7 @@ func NewContactHandler(s *ContactService) *ContactHandler {
 
 func (h *ContactHandler) GetContactsHandler(w http.ResponseWriter, r *http.Request){
 	ctx := r.Context()
-	accID := utils.GetCurrentAccountID(ctx)
+	accID := sharedhelper.GetCurrentAccountID(ctx)
 	contacts, err := h.contactService.GetContacts(ctx, accID)
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
@@ -45,7 +45,7 @@ func (h *ContactHandler) CreateContactHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (h *ContactHandler) GetContactByIdHandler(w http.ResponseWriter, r *http.Request) {
-	id, err := utils.GetPathParam(r, "id")
+	id, err := api.GetPathParam(r, "id")
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
@@ -67,7 +67,7 @@ func (h *ContactHandler) GetContactByIdHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (h *ContactHandler) GetContactByUUIDHandler(w http.ResponseWriter, r *http.Request) {
-	uuid, err := utils.GetPathParam(r, "uuid")
+	uuid, err := api.GetPathParam(r, "uuid")
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return

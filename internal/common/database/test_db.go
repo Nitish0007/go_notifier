@@ -1,4 +1,4 @@
-package helpers
+package database
 
 import (
 	"gorm.io/driver/sqlite"
@@ -9,13 +9,12 @@ import (
 	"github.com/Nitish0007/go_notifier/internal/features/configuration"
 	"github.com/Nitish0007/go_notifier/internal/features/contact"
 	"github.com/Nitish0007/go_notifier/internal/features/emailcontact"
-	"github.com/Nitish0007/go_notifier/utils"
 )
 
 // SetupTestDBForIntegrationTests connects to test database and runs migrations
 // Returns the GORM DB instance for integration tests
 func SetupTestDBForIntegrationTests() (*gorm.DB, error) {
-	return utils.SetupTestDB()
+	return SetupTestDB()
 }
 
 // SetupUnitTestsDB creates an in-memory SQLite database for unit tests

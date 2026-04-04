@@ -5,7 +5,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/Nitish0007/go_notifier/utils"
+	"github.com/Nitish0007/go_notifier/internal/shared/sharedhelper"
 	"github.com/Nitish0007/go_notifier/internal/features/apiKey"
 )
 
@@ -39,7 +39,7 @@ func (r *AccountRepository) RegisterAccount(ctx context.Context, account *Accoun
 
 		// initialize API key
 		apiKey := &apiKey.ApiKey{
-			Key:       utils.GenerateAlphaNumericKey(),
+			Key:       sharedhelper.GenerateAlphaNumericKey(),
 			AccountID: account.ID,
 		}
 		// create API key

@@ -1,4 +1,4 @@
-package utils
+package database
 
 import (
 	"database/sql"
@@ -34,10 +34,10 @@ type envConfig struct {
 	Production  dbConfig `yaml:"production"`
 }
 
-var dbConf dbConfig
+var dbconf dbConfig
 
 // Public methods below
-func ConnectDB(env string) (*gorm.DB, error) {
+func Connect(env string) (*gorm.DB, error) {
 	// setDbConfigs(env)
 	dsn := getDSN(env)
 
@@ -87,13 +87,13 @@ func SetupTestDB() (*gorm.DB, error) {
 	dsn := getDSN("test")
 
 	// Convert DSN to database URL format for migrate
-	dbConf := getDBConfigs("test")
+	dbconf := getDBConfigs("test")
 	dbURL := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		dbConf.Username,
-		dbConf.Password,
-		dbConf.Host,
-		dbConf.Port,
-		dbConf.Database,
+		dbconf.Username,
+		dbconf.Password,
+		dbconf.Host,
+		dbconf.Port,
+		dbconf.Database,
 	)
 
 	// Open database connection using database/sql (required by migrate)
@@ -203,13 +203,13 @@ func getDBConfigs(env string) dbConfig {
 }
 
 func getDSN(env string) string {
-	dbConf := getDBConfigs(env)
+	dbconf := getDBConfigs(env)
 	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=UTC",
-		dbConf.Host,
-		dbConf.Username,
-		dbConf.Password,
-		dbConf.Database,
-		dbConf.Port,
+		dbconf.Host,
+		dbconf.Username,
+		dbconf.Password,
+		dbconf.Database,
+		dbconf.Port,
 	)
 }
 

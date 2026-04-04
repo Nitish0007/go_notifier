@@ -1,4 +1,4 @@
-package utils
+package sharedhelper
 
 import (
 	"context"
@@ -59,10 +59,13 @@ func SetCurrentAccountID(ctx context.Context, accountID int) context.Context {
 	return context.WithValue(ctx, CurrentAccountID, accountID)
 }
 
-func ParseTime(timeStr string) *time.Time {
-	t, err := time.Parse(time.RFC3339, timeStr)
+func ParseTime(timeStr string, layout string) *time.Time {
+	if layout == "" {
+		layout = time.RFC3339
+	}
+	t, err := time.Parse(layout, timeStr)
 	if err != nil {
-		return nil // return zero time if parsing fails
+		return nil
 	}
 	return &t
 }
