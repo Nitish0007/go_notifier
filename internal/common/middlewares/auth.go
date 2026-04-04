@@ -8,14 +8,15 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/Nitish0007/go_notifier/internal/features/apiKey"
-	"github.com/Nitish0007/go_notifier/utils"
+	"github.com/Nitish0007/go_notifier/internal/shared/api"
+	"github.com/Nitish0007/go_notifier/internal/shared/sharedhelper"
 )
 
 func AuthenticateRequest(conn *gorm.DB) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Header.Get("Authorization") == "" {
-				utils.WriteErrorResponse(w, http.StatusUnauthorized, "Unauthorized request")
+				api.WriteErrorResponse(w, http.StatusUnauthorized, "Unauthorized request")
 				return
 			}
 
@@ -23,7 +24,7 @@ func AuthenticateRequest(conn *gorm.DB) func(http.Handler) http.Handler {
 			accountIDStr := chi.URLParam(r, "account_id")
 			accountID, err := strconv.Atoi(accountIDStr)
 			if err != nil {
-				utils.WriteErrorResponse(w, http.StatusUnauthorized, "Invalid account ID")
+				api.WriteErrorResponse(w, http.StatusUnauthorized, "Invalid account ID")
 				return
 			}
 
@@ -32,16 +33,16 @@ func AuthenticateRequest(conn *gorm.DB) func(http.Handler) http.Handler {
 
 			apiKey, err := repo.FindByAccountID(ctx, accountID)
 			if err != nil {
-				utils.WriteErrorResponse(w, http.StatusUnauthorized, err.Error())
+				api.WriteErrorResponse(w, http.StatusUnauthorized, err.Error())
 				return
 			}
 
 			if apiKey.Key == "" || apiKey.Key != authKey {
-				utils.WriteErrorResponse(w, http.StatusUnauthorized, "Invalid Api Key used")
+				api.WriteErrorResponse(w, http.StatusUnauthorized, "Invalid Api Key used")
 				return
 			}
 
-			ctx = utils.SetCurrentAccountID(ctx, accountID)
+			ctx = sharedhelper.SetCurrentAccountID(ctx, accountID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

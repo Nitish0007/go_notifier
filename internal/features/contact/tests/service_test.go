@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	"github.com/Nitish0007/go_notifier/internal/common/helpers"
+	"github.com/Nitish0007/go_notifier/internal/common/database"
 	"github.com/Nitish0007/go_notifier/internal/features/account"
 	"github.com/Nitish0007/go_notifier/internal/features/apiKey"
 	"github.com/Nitish0007/go_notifier/internal/features/contact"
@@ -16,9 +16,9 @@ import (
 
 func newContactService(t *testing.T) (*account.Account, *contact.ContactService) {
 	t.Helper()
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	apiKeyRepo := apiKey.NewApiKeyRepository(db)
 	accRepo := account.NewAccountRepository(db, apiKeyRepo)

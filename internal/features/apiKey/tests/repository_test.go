@@ -4,17 +4,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Nitish0007/go_notifier/internal/common/helpers"
+	"github.com/Nitish0007/go_notifier/internal/common/database"
 	"github.com/Nitish0007/go_notifier/internal/features/account"
 	"github.com/Nitish0007/go_notifier/internal/features/apiKey"
 	"github.com/stretchr/testify/require"
 )
 
 func TestApiKeyRepository_Create_Success(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err, "Failed to setup test database")
 
-	err = helpers.AutoMigrate(db)
+	err = database.AutoMigrate(db)
 	require.NoError(t, err, "Failed to migrate tables")
 
 	repo := apiKey.NewApiKeyRepository(db)
@@ -42,10 +42,10 @@ func TestApiKeyRepository_Create_Success(t *testing.T) {
 }
 
 func TestApiKeyRepository_Create_DuplicateKeyFails(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err, "Failed to setup test database")
 
-	err = helpers.AutoMigrate(db)
+	err = database.AutoMigrate(db)
 	require.NoError(t, err, "Failed to migrate tables")
 
 	repo := apiKey.NewApiKeyRepository(db)
@@ -68,10 +68,10 @@ func TestApiKeyRepository_Create_DuplicateKeyFails(t *testing.T) {
 }
 
 func TestApiKeyRepository_FindByAccountID_Success(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err, "Failed to setup test database")
 
-	err = helpers.AutoMigrate(db)
+	err = database.AutoMigrate(db)
 	require.NoError(t, err, "Failed to migrate tables")
 
 	repo := apiKey.NewApiKeyRepository(db)
@@ -102,10 +102,10 @@ func TestApiKeyRepository_FindByAccountID_Success(t *testing.T) {
 }
 
 func TestApiKeyRepository_FindByAccountID_Failure(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err, "Failed to setup test database")
 
-	err = helpers.AutoMigrate(db)
+	err = database.AutoMigrate(db)
 	require.NoError(t, err, "Failed to migrate tables")
 
 	repo := apiKey.NewApiKeyRepository(db)

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 
-	"github.com/Nitish0007/go_notifier/internal/common/helpers"
+	"github.com/Nitish0007/go_notifier/internal/common/database"
 	"github.com/Nitish0007/go_notifier/internal/features/account"
 	"github.com/Nitish0007/go_notifier/internal/features/apiKey"
 	"github.com/Nitish0007/go_notifier/internal/features/contact"
@@ -31,9 +31,9 @@ func seedAccount(t *testing.T, db *gorm.DB) *account.Account {
 }
 
 func TestContactRepository_CreateWithEmail_Success(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	acc := seedAccount(t, db)
 	ecRepo := emailcontact.NewEmailContactRepository(db)
@@ -63,9 +63,9 @@ func TestContactRepository_CreateWithEmail_Success(t *testing.T) {
 }
 
 func TestContactRepository_CreateWithEmail_DuplicateEmailPerAccount(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	acc := seedAccount(t, db)
 	ecRepo := emailcontact.NewEmailContactRepository(db)
@@ -81,9 +81,9 @@ func TestContactRepository_CreateWithEmail_DuplicateEmailPerAccount(t *testing.T
 }
 
 func TestContactRepository_GetContacts(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	acc := seedAccount(t, db)
 	ecRepo := emailcontact.NewEmailContactRepository(db)
@@ -106,9 +106,9 @@ func TestContactRepository_GetContacts(t *testing.T) {
 }
 
 func TestContactRepository_FindById_NotFound(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	repo := contact.NewContactRepository(db, emailcontact.NewEmailContactRepository(db))
 	_, err = repo.FindById(context.Background(), 99999)
@@ -116,9 +116,9 @@ func TestContactRepository_FindById_NotFound(t *testing.T) {
 }
 
 func TestContactRepository_FindByUUID(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	acc := seedAccount(t, db)
 	ecRepo := emailcontact.NewEmailContactRepository(db)

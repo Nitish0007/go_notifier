@@ -6,16 +6,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/Nitish0007/go_notifier/internal/common/helpers"
+	"github.com/Nitish0007/go_notifier/internal/common/database"
 	"github.com/Nitish0007/go_notifier/internal/features/configuration"
 )
 
 func boolPtr(b bool) *bool { return &b }
 
 func TestConfigurationService_CreateAndList(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	acc := seedAccount(t, db)
 	svc := configuration.NewConfigurationService(configuration.NewConfigurationRepository(db))
@@ -39,9 +39,9 @@ func TestConfigurationService_CreateAndList(t *testing.T) {
 }
 
 func TestConfigurationService_UpdateConfiguration(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	acc := seedAccount(t, db)
 	svc := configuration.NewConfigurationService(configuration.NewConfigurationRepository(db))
@@ -75,9 +75,9 @@ func TestConfigurationService_UpdateConfiguration(t *testing.T) {
 }
 
 func TestConfigurationService_DeleteConfiguration(t *testing.T) {
-	db, err := helpers.SetupUnitTestsDB()
+	db, err := database.SetupUnitTestsDB()
 	require.NoError(t, err)
-	require.NoError(t, helpers.AutoMigrate(db))
+	require.NoError(t, database.AutoMigrate(db))
 
 	acc := seedAccount(t, db)
 	repo := configuration.NewConfigurationRepository(db)

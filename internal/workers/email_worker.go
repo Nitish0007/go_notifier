@@ -8,8 +8,8 @@ import (
 	"gorm.io/gorm"
 	rbmq "github.com/rabbitmq/amqp091-go"
 	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
-	"github.com/Nitish0007/go_notifier/internal/shared/dto"
-	"github.com/Nitish0007/go_notifier/internal/features/notification"
+	// "github.com/Nitish0007/go_notifier/internal/shared/dto"
+	"github.com/Nitish0007/go_notifier/internal/features/emailnotification"
 	"github.com/Nitish0007/go_notifier/internal/features/configuration"
 )
 
@@ -22,11 +22,11 @@ type EmailWorker struct {
 	rbmqConn            *rbmq.Connection
 	ctx                 context.Context
 	queue               *rabbitmq_utils.Queue
-	notificationService *notification.NotificationService
+	notificationService *emailnotification.EmailNotificationService
 	configurationRepo   *configuration.ConfigurationRepository
 }
 
-func NewEmailWorker(dbConn *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, notificationService *notification.NotificationService) *EmailWorker {
+func NewEmailWorker(dbConn *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, notificationService *emailnotification.EmailNotificationService) *EmailWorker {
 	q, err := rabbitmq_utils.NewQueue(notificationDeliveryQueueName)
 	if err != nil {
 		return nil
@@ -73,11 +73,10 @@ func (w *EmailWorker) Consume() {
 
 			body := jobMsg.GetPayload()
 			log.Printf("========================> Message body: %v", body)
-			notificationID, ok := body["notificationID"].(string)
+			notificationID, ok := body["notificationID"].(int64)
 			if !ok {
-				log.Printf("Notification ID not found in message body %v", body)
+				log.Printf("Notification ID is not a number: %v", notificationID)
 				w.queue.PushToDLQ(jobMsg)
-				msg.Ack(false)
 				continue
 			}
 			
@@ -135,13 +134,13 @@ func (w *EmailWorker) Consume() {
 				msg.Ack(false)
 				continue
 			}
-			err = w.notificationService.SendNotification(w.ctx, notificationID, accountID, &dto.SMTPConfiguration{
-				Host:     smtpConfig.Host,
-				Port:     smtpConfig.Port,
-				Username: smtpConfig.Username,
-				Password: smtpConfig.Password,
-				From:     smtpConfig.From,
-			})
+			// err = w.notificationService.SendNotification(w.ctx, notificationID, accountID, &dto.SMTPConfiguration{
+			// 	Host:     smtpConfig.Host,
+			// 	Port:     smtpConfig.Port,
+			// 	Username: smtpConfig.Username,
+			// 	Password: smtpConfig.Password,
+			// 	From:     smtpConfig.From,
+			// })
 			if err != nil {
 				log.Printf("Error in sending notification: %v", err)
 				w.queue.PushToRetry(jobMsg)

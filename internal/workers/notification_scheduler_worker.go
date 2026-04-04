@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/Nitish0007/go_notifier/internal/features/notification"
+	"github.com/Nitish0007/go_notifier/internal/features/emailnotification"
 	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
 	rbmq "github.com/rabbitmq/amqp091-go"
 	"gorm.io/gorm"
@@ -23,7 +23,7 @@ type NotificationSchedulerWorker struct {
 	ctx      context.Context
 }
 
-func NewNotificationSchedulerWorker(db *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, s *notification.NotificationService) *NotificationSchedulerWorker {
+func NewNotificationSchedulerWorker(db *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Context, s *emailnotification.EmailNotificationService) *NotificationSchedulerWorker {
 	q, err := rabbitmq_utils.NewQueue(deliveryQueueName)
 	if err != nil {
 		return nil
@@ -101,12 +101,12 @@ func (w *NotificationSchedulerWorker) pollNotifications() error {
 	return nil
 }
 
-func (w *NotificationSchedulerWorker) fetchNotifications() ([]*notification.Notification, error) {
-	repo := notification.NewNotificationRepository(w.dbConn)
+func (w *NotificationSchedulerWorker) fetchNotifications() ([]*emailnotification.EmailNotification, error) {
+	repo := emailnotification.NewEmailNotificationRepository(w.dbConn)
 	filters := map[string]any{
 		// NOTE: this is the status of the notifications that are to be scheduled
 		// using Enqueued status for development purposes
-		"status": notification.Pending,
+		"status": emailnotification.Draft,
 	}
 
 	// enqueue 500 notifications at a time to avoid overwhelming the queue
@@ -121,8 +121,8 @@ func (w *NotificationSchedulerWorker) fetchNotifications() ([]*notification.Noti
 	return notifications, nil
 }
 
-func (w *NotificationSchedulerWorker) pushNotificationsToDeliveryQueue(notifications []*notification.Notification) error {
-	repo := notification.NewNotificationRepository(w.dbConn)
+func (w *NotificationSchedulerWorker) pushNotificationsToDeliveryQueue(notifications []*emailnotification.EmailNotification) error {
+	repo := emailnotification.NewEmailNotificationRepository(w.dbConn)
 	for _, n := range notifications {
 		// create job message
 		payload := map[string]any{"notificationID": n.ID, "accountID": n.AccountID}
@@ -143,7 +143,7 @@ func (w *NotificationSchedulerWorker) pushNotificationsToDeliveryQueue(notificat
 		}
 
 		fieldsToUpdate := map[string]any{
-			"status": notification.Enqueued,
+			"status": emailnotification.Enqueued,
 		}
 		_, err = repo.UpdateNotification(w.ctx, fieldsToUpdate, n)
 		if err != nil {

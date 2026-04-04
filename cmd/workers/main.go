@@ -6,8 +6,8 @@ import (
 	"os"
 	"github.com/joho/godotenv"
 
-	"github.com/Nitish0007/go_notifier/utils"
 	"github.com/Nitish0007/go_notifier/initializer"
+	"github.com/Nitish0007/go_notifier/internal/common/database"
 	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
 )
 
@@ -31,7 +31,7 @@ func main() {
 	}
 
 	// make database connection for workers
-	dbConn, err := utils.ConnectDB(env)
+	dbConn, err := database.Connect(env)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

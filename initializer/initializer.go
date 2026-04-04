@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/Nitish0007/go_notifier/initializer/container"
 	"github.com/Nitish0007/go_notifier/internal/features/account"
-	"github.com/Nitish0007/go_notifier/internal/features/notification"
+	"github.com/Nitish0007/go_notifier/internal/features/emailnotification"
 	"github.com/Nitish0007/go_notifier/internal/features/configuration"
 	"github.com/Nitish0007/go_notifier/internal/common/middlewares"
 
@@ -29,7 +29,7 @@ func InitializeApplication(db *gorm.DB, router *chi.Mux) {
 
 		r.Route("/{account_id}", func(r chi.Router) {
 			r.Use(middlewares.AuthenticateRequest(db))
-			notification.RegisterNotificationRoutes(db, r, c.NotificationHandler)
+			emailnotification.RegisterEmailNotificationRoutes(db, r, c.EmailNotificationHandler)
 			configuration.RegisterConfigurationRoutes(db, r, c.ConfigurationHandler)
 		})
 	})
@@ -40,8 +40,8 @@ func InitializeWorkers(db *gorm.DB, rbmqConn *rbmq.Connection, ctx context.Conte
 	c := container.NewContainer(db)
 
 	// Initialize workers by injecting dependencies
-	schedulerWorker := workers.NewNotificationSchedulerWorker(db, rbmqConn, ctx, c.NotificationService)
-	emailWorker := workers.NewEmailWorker(db, rbmqConn, ctx, c.NotificationService)
+	schedulerWorker := workers.NewNotificationSchedulerWorker(db, rbmqConn, ctx, c.EmailNotificationService)
+	emailWorker := workers.NewEmailWorker(db, rbmqConn, ctx, c.EmailNotificationService)
 	// notificationBatchWorker := workers.NewNotificationBatchWorker(db, rbmqConn, ctx, c.NotificationService)
 
 

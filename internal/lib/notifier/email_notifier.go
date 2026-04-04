@@ -4,23 +4,24 @@ import (
 	"fmt"
 	"log"
 	"context"
-	"errors"
+	// "errors"
 	"net/smtp"
 	"crypto/tls"
 	"bytes"
 	"github.com/google/uuid"
 
-	"github.com/Nitish0007/go_notifier/utils"
+
 	"github.com/Nitish0007/go_notifier/internal/shared/dto"
-	"github.com/Nitish0007/go_notifier/internal/features/notification"
+	"github.com/Nitish0007/go_notifier/internal/features/emailnotification"
+	// "github.com/Nitish0007/go_notifier/internal/shared/sharedhelper"
 	notifierInterface "github.com/Nitish0007/go_notifier/internal/shared/interfaces/notifier"
 )
 
 type EmailNotifier struct {
-	notificationRepository *notification.NotificationRepository
+	notificationRepository *emailnotification.EmailNotificationRepository
 };
 
-func NewEmailNotifier(r *notification.NotificationRepository) *EmailNotifier {
+func NewEmailNotifier(r *emailnotification.EmailNotificationRepository) *EmailNotifier {
 	return &EmailNotifier{
 		notificationRepository: r,
 	}
@@ -45,100 +46,39 @@ func (n *EmailNotifier) Notify(notificationView notifierInterface.NotificationVi
 
 func (n *EmailNotifier) CreateNotification(ctx context.Context, payload map[string]any) (notifierInterface.NotificationView, error) {
 	// Initialize the notification model instance for given payload
-	notif := &notification.Notification{}
-	aid := utils.GetCurrentAccountID(ctx)
-	if aid == -1 {
-		return nil, errors.New("account ID is required to create a notification")
-	}
-	notif.AccountID = aid
-	emailChannel, exists := payload["channel"].(string)
-	if !exists || emailChannel != "email" {
-		return nil, errors.New("channel is required and must be 'email'")
-	}
-
-	subject, exists := payload["subject"].(string)
-	if !exists || subject == "" {
-		return nil, errors.New("subject is required to create notification")
-	}
-	notif.Subject = subject
-
-	nChannel, err := notification.StringToNotificationChannel(emailChannel)
-	if err != nil {
-		return nil, err
-	}
-
-	// NOTE: THE PAYLOAD STRUCTURE MUST BE REFINED LATER, THIS IS JUST A PROTOTYPE
-	notif.Channel = nChannel
-	nStatus, err := notification.StringToNotificationStatus("pending")
-	if err != nil {
-		return nil, err
-	}
-	notif.Status = nStatus
-	notif.Recipient = payload["recipient"].(string)
-	notif.Body = payload["body"].(string)
-	notif.HtmlBody = payload["html_body"].(string)
-	sendTime := payload["send_at"]
-	if sendTime != nil {
-		notif.SendAt = utils.ParseTime(sendTime.(string))
-	} else {
-		notif.SendAt = utils.GetCurrentTime()
-	}
-	
-	sanitizedMetadata := make(map[string]any)	
-	if metadata, exists := payload["metadata"].(map[string]any); exists {
-		if len(metadata) == 0 {
-			return nil, errors.New("metadata can't be empty")
-		}
-		if _, ok := metadata["from_email"]; !ok || metadata["from_email"] == "" {
-			return nil, errors.New("from_email is required in metadata")
-		}
-		if _, ok := metadata["from_name"]; !ok || metadata["from_name"] == "" {
-			return nil, errors.New("from_name is required in metadata")
-		}
-		if _, ok := metadata["to_name"]; !ok || metadata["to_name"] == "" {
-			return nil, errors.New("to_name is required in metadata")
-		}
-		if _, ok := metadata["reply_to_email"]; !ok || metadata["reply_to_email"] == "" {
-			return nil, errors.New("reply_to_email is required in metadata")
-		}
-		if _, ok := metadata["reply_to_name"]; !ok || metadata["reply_to_name"] == "" {
-			return nil, errors.New("reply_to_name is required in metadata")
-		}
-		
-
-		// keeping only required fields in metadata
-		sanitizedMetadata["from_email"] = metadata["from_email"].(string)
-		sanitizedMetadata["from_name"] = metadata["from_name"].(string)
-		sanitizedMetadata["to_name"] = metadata["to_name"].(string)
-		sanitizedMetadata["reply_to_email"] = metadata["reply_to_email"].(string)
-		sanitizedMetadata["reply_to_name"] = metadata["reply_to_name"].(string)
-
-		notif.Metadata = sanitizedMetadata
-		// notification.ErrorMessage = nil
-	} else {
-		return nil, errors.New("metadata is required in notification data")
-	}
-
-	err = n.notificationRepository.Create(ctx, notif)
-	return notif, err
-}
-
-func (n *EmailNotifier) CreateBulkNotifications(ctx context.Context, payload []map[string]any) ([]*notification.Notification, error) {
-	// Initialize the notification model instance for given payload
-	// notifications := []*models.Notification{}
-	// for _, p := range payload {
-	// 	notification := &models.Notification{}
-	// 	notifications = append(notifications, notification)
+	// notif := &emailnotification.EmailNotification{}
+	// aid := sharedhelper.GetCurrentAccountID(ctx)
+	// if aid == -1 {
+	// 	return nil, errors.New("account ID is required to create a notification")
+	// }
+	// notif.AccountID = aid
+	// emailChannel, exists := payload["channel"].(string)
+	// if !exists || emailChannel != "email" {
+	// 	return nil, errors.New("channel is required and must be 'email'")
 	// }
 
-	// err := n.notificationRepository.Create(ctx, notifications)
-	// return notifications, err
+	// subject, exists := payload["subject"].(string)
+	// if !exists || subject == "" {
+	// 	return nil, errors.New("subject is required to create notification")
+	// }
+	// notif.Subject = subject
+
+	
+
+	// // NOTE: THE PAYLOAD STRUCTURE MUST BE REFINED LATER, THIS IS JUST A PROTOTYPE
+	// notif.Status, err := emailnotification.StringToEmailNotificationStatus(payload["status"].(string))
+	// if err != nil {
+	// 	return nil, err
+	// }	
+
+
+	// if err := n.notificationRepository.Create(ctx, notif); err != nil {
+	// 	return nil, err
+	// }
+	// return notif, nil
 	return nil, nil
 }
 
-func (n *EmailNotifier) ChannelType() string {
-	return "email"
-}
 
 func Send(to, from, fromName, toName, replyToEmail, replyToName, subject, body, htmlBody string, smtpConfig *dto.SMTPConfiguration) error {
 	auth := smtp.PlainAuth("", smtpConfig.Username, smtpConfig.Password, smtpConfig.Host)
