@@ -51,7 +51,16 @@ func NewEmailNotificationHandler(s *EmailNotificationService) *EmailNotification
 // }
 
 func (h *EmailNotificationHandler) CreateNotificationHandler(w http.ResponseWriter, r *http.Request) {
-	payload, err := api.ParseAndValidateRequest[CreateEmailCampaignRequest](r)
+	payload, err := api.ParseJSONBody[CreateEmailCampaignRequest](r)
+	if err != nil {
+		api.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	accID := sharedhelper.GetCurrentAccountID(r.Context())
+	payload.Notification.AccountID = accID
+
+	payload, err = api.ValidateRequestData(payload)
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return

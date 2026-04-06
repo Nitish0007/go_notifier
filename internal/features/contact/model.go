@@ -7,9 +7,9 @@ import (
 )
 
 type Contact struct {
-	ID        int       `json:"id" gorm:"primaryKey" validate:"omitempty,gt=0"`
+	ID        int64       `json:"id" gorm:"primaryKey" validate:"omitempty,gt=0"`
 	UUID      string    `json:"uuid" gorm:"uniqueIndex" validate:"omitempty,uuid"`
-	AccountID int       `json:"account_id" gorm:"not null;index" validate:"required,gt=0"`
+	AccountID int64       `json:"account_id" gorm:"not null;index" validate:"required,gt=0"`
 	FirstName string    `json:"first_name" gorm:"not null" validate:"required,min=1,max=100"`
 	LastName  string    `json:"last_name" gorm:"not null" validate:"required,min=1,max=100"`
 	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime" validate:"-"`

@@ -96,7 +96,7 @@ func TestApiKeyRepository_FindByAccountID_Success(t *testing.T) {
 	err = repo.Create(context.Background(), testApiKey)
 	require.NoError(t, err, "Create should succeed")
 
-	foundApiKey, err := repo.FindByAccountID(context.Background(), testAccount.ID)
+	foundApiKey, err := repo.FindByKeyAndAccountID(context.Background(), testApiKey.Key, testAccount.ID)
 	require.NoError(t, err, "Find by account ID should succeed")
 	require.Equal(t, testApiKey.Key, foundApiKey.Key, "API key should be found")
 }
@@ -110,7 +110,7 @@ func TestApiKeyRepository_FindByAccountID_Failure(t *testing.T) {
 
 	repo := apiKey.NewApiKeyRepository(db)
 
-	foundApiKey, err := repo.FindByAccountID(context.Background(), 1)
+	foundApiKey, err := repo.FindByKeyAndAccountID(context.Background(), "test-key", 1)
 	require.Error(t, err, "Find by account ID should fail with non-existent account ID")
 	require.Empty(t, foundApiKey, "API key should be empty")
 	require.Equal(t, apiKey.ApiKey{}, foundApiKey, "API key should be empty")

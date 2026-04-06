@@ -32,8 +32,11 @@ func TestAccountService_CreateAccount_Success(t *testing.T) {
 	require.Equal(t, "signup@example.com", resp.Email)
 	require.Equal(t, "Sam", resp.FirstName)
 
-	_, err = apiKeyRepo.FindByAccountID(context.Background(), resp.ID)
-	require.NoError(t, err)
+	apiKeys, err := apiKeyRepo.Index(context.Background(), resp.ID)
+	require.NoError(t, err, "Index should succeed")
+	require.NotEmpty(t, apiKeys, "API keys should not be empty")
+	require.Equal(t, resp.ID, apiKeys[0].AccountID, "Account ID should be found")
+	require.NotEmpty(t, apiKeys[0].Key, "API key should not be empty")
 }
 
 func TestAccountService_CreateAccount_PasswordMismatch(t *testing.T) {

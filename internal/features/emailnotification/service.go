@@ -23,7 +23,7 @@ func NewEmailNotificationService(r *EmailNotificationRepository) *EmailNotificat
 	}
 }
 
-func (s *EmailNotificationService) GetNotifications(ctx context.Context, accID int) ([]*EmailNotification, error) {
+func (s *EmailNotificationService) GetNotifications(ctx context.Context, accID int64) ([]*EmailNotification, error) {
 	list, err := s.notificationRepo.Index(ctx, accID)
 	if err != nil {
 		return nil, err

@@ -15,7 +15,7 @@ func NewConfigurationService(cr *ConfigurationRepository) *ConfigurationService 
 	}
 }
 
-func (s *ConfigurationService) GetConfigurations(ctx context.Context, accID int) ([]*Configuration, error) {
+func (s *ConfigurationService) GetConfigurations(ctx context.Context, accID int64) ([]*Configuration, error) {
 	configs, err := s.configurationRepo.Index(ctx, accID)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (s *ConfigurationService) CreateConfiguration(ctx context.Context, payload 
 	return config, nil
 }
 
-func (s *ConfigurationService) DeleteConfiguration(ctx context.Context, accID int, cid int) error {
+func (s *ConfigurationService) DeleteConfiguration(ctx context.Context, accID int64, cid int64) error {
 	return s.configurationRepo.Delete(ctx, cid)
 }
 

@@ -1,0 +1,1 @@
+-- ALTER TABLE list_subscriptions DROP COLUMN account_id;

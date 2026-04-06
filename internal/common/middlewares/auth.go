@@ -29,9 +29,9 @@ func AuthenticateRequest(conn *gorm.DB) func(http.Handler) http.Handler {
 			}
 
 			ctx := r.Context()
-			repo := apiKey.NewApiKeyRepository(conn)
+			apiKeyRepo := apiKey.NewApiKeyRepository(conn)
 
-			apiKey, err := repo.FindByAccountID(ctx, accountID)
+			apiKey, err := apiKeyRepo.FindByKeyAndAccountID(ctx, authKey, int64(accountID))
 			if err != nil {
 				api.WriteErrorResponse(w, http.StatusUnauthorized, err.Error())
 				return
@@ -42,7 +42,7 @@ func AuthenticateRequest(conn *gorm.DB) func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx = sharedhelper.SetCurrentAccountID(ctx, accountID)
+			ctx = sharedhelper.SetCurrentAccountID(ctx, int64(accountID))
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

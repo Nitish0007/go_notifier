@@ -1,6 +1,8 @@
 package account
 
-import "time"
+import (
+	"time"
+)
 
 // Request DTOs
 type SignupRequest struct {
@@ -22,7 +24,7 @@ type LoginRequest struct {
 
 // Response DTOs
 type SignupResponse struct {
-	ID        int       `json:"id"`
+	ID        int64     `json:"id"`
 	Email     string    `json:"email"`
 	FirstName string    `json:"first_name"`
 	LastName  string    `json:"last_name"`
@@ -32,7 +34,7 @@ type SignupResponse struct {
 
 type LoginResponse struct {
 	AuthToken string `json:"auth_token"`
-	AccountID string `json:"account_id"`
+	AccountID int64  `json:"account_id"`
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`

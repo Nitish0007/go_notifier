@@ -2,7 +2,6 @@ package account
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -60,7 +59,7 @@ func (s *AccountService) Login(ctx context.Context, payload *LoginRequest) (*Log
 
 	return &LoginResponse{
 		AuthToken: apiKey,
-		AccountID: strconv.Itoa(account.ID),
+		AccountID: account.ID,
 		Email:     account.Email,
 		FirstName: account.FirstName,
 		LastName:  account.LastName,

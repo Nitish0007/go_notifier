@@ -6,7 +6,7 @@ import (
 )
 
 type Account struct {
-	ID                int       `json:"id" gorm:"primaryKey" validate:"-"`
+	ID                int64     `json:"id" gorm:"primaryKey" validate:"-"`
 	Email             string    `json:"email" gorm:"uniqueIndex;not null" validate:"required,email"`
 	EncryptedPassword string    `json:"-" gorm:"column:encrypted_password;not null" validate:"required,min=8"` // do not expose in JSON
 	FirstName         string    `json:"first_name" gorm:"column:first_name;not null" validate:"required,min=1,max=100"`

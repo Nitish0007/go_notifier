@@ -1,6 +1,7 @@
 package contact
 
 import (
+	"fmt"
 	"context"
 	"errors"
 
@@ -22,7 +23,7 @@ func NewContactRepository(db *gorm.DB, ecRepo *emailcontact.EmailContactReposito
 	}
 }
 
-func (r *ContactRepository) GetContacts(ctx context.Context, accID int) ([]*Contact, error) {
+func (r *ContactRepository) GetContacts(ctx context.Context, accID int64) ([]*Contact, error) {
 	var contacts []*Contact
 	err := r.DB.WithContext(ctx).Preload("EmailContact").Where("account_id = ?", accID).Find(&contacts).Error
 	if err != nil {
@@ -69,9 +70,9 @@ func (r *ContactRepository) createContactRow(tx *gorm.DB, contact *Contact) erro
 	return tx.Where("id = ?", contact.ID).First(contact).Error
 }
 
-func (r *ContactRepository) FindById(ctx context.Context, id int) (*Contact, error) {
+func (r *ContactRepository) FindById(ctx context.Context, accId int64, id int64) (*Contact, error) {
 	var contact Contact
-	err := r.DB.WithContext(ctx).Preload("EmailContact").Where("id = ?", id).First(&contact).Error
+	err := r.DB.WithContext(ctx).Preload("EmailContact").Where("id = ? AND account_id = ?", id, accId).First(&contact).Error
 	if err != nil {
 		return nil, err
 	}
@@ -79,12 +80,47 @@ func (r *ContactRepository) FindById(ctx context.Context, id int) (*Contact, err
 	return &contact, nil
 }
 
-func (r *ContactRepository) FindByUUID(ctx context.Context, uuid string) (*Contact, error) {
+func (r *ContactRepository) FindByUUID(ctx context.Context, accId int64, uuid string) (*Contact, error) {
 	var contact Contact
-	err := r.DB.WithContext(ctx).Preload("EmailContact").Where("uuid = ?", uuid).First(&contact).Error
+	err := r.DB.WithContext(ctx).Preload("EmailContact").Where("account_id = ? AND uuid = ?", accId, uuid).First(&contact).Error
 	if err != nil {
 		return nil, err
 	}
 
 	return &contact, nil
+}
+
+func (r *ContactRepository) FindByEmail(ctx context.Context, accId int64, email string) (*Contact, error) {
+	var contact Contact
+	err := r.DB.WithContext(ctx).Where("account_id = ? AND email_contact->>'email' = ?", accId, email).First(&contact).Error
+	if err != nil {
+		return nil, err
+	}
+	if contact.EmailContact == nil {
+		return nil, nil
+	}
+	return &contact, nil
+}
+
+func (r *ContactRepository) FindOrCreateByEmail(ctx context.Context, accId int64, contactPayload *ContactPayload) (*Contact, error) {
+	contact, err := r.FindByEmail(ctx, accId, contactPayload.Email)
+	if err != nil {
+		return nil, err
+	}
+	if contact == nil {
+		contact = &Contact{
+			FirstName: contactPayload.FirstName,
+			LastName: contactPayload.LastName,
+			AccountID: accId,
+		}
+		emailContact := &emailcontact.EmailContact{
+			Email:     contactPayload.Email,
+			AccountID: accId,
+		}
+		err = r.CreateWithEmail(ctx, contact, emailContact)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create contact: %w", err)
+		}
+	}
+	return contact, nil
 }

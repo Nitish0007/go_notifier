@@ -20,7 +20,7 @@ func (r *ConfigurationRepository) Create(ctx context.Context, config *Configurat
 	return r.DB.WithContext(ctx).Create(config).Error
 }
 
-func (r *ConfigurationRepository) GetByAccountID(ctx context.Context, accountID int) (*Configuration, error) {
+func (r *ConfigurationRepository) GetByAccountID(ctx context.Context, accountID int64) (*Configuration, error) {
 	var config Configuration
 	err := r.DB.WithContext(ctx).Where("account_id = ? AND default_configuration = ?", accountID, true).First(&config).Error
 	if err != nil {
@@ -29,7 +29,7 @@ func (r *ConfigurationRepository) GetByAccountID(ctx context.Context, accountID 
 	return &config, nil
 }
 
-func (r *ConfigurationRepository) GetByAccountIDAndConfigType(ctx context.Context, accountID int, configType string) (*Configuration, error) {
+func (r *ConfigurationRepository) GetByAccountIDAndConfigType(ctx context.Context, accountID int64, configType string) (*Configuration, error) {
 	var config Configuration
 	err := r.DB.WithContext(ctx).Where("account_id = ? AND config_type = ? AND default_configuration = ?", accountID, configType, false).First(&config).Error
 	if err != nil {
@@ -38,7 +38,7 @@ func (r *ConfigurationRepository) GetByAccountIDAndConfigType(ctx context.Contex
 	return &config, nil
 }
 
-func (r *ConfigurationRepository) Index(ctx context.Context, accountID int) ([]*Configuration, error) {
+func (r *ConfigurationRepository) Index(ctx context.Context, accountID int64) ([]*Configuration, error) {
 	var configs []*Configuration
 	err := r.DB.WithContext(ctx).Where("account_id = ?", accountID).Order("created_at DESC").Find(&configs).Error
 	if err != nil {
@@ -66,7 +66,7 @@ func (r *ConfigurationRepository) Update(ctx context.Context, config *Configurat
 	return nil
 }
 
-func (r *ConfigurationRepository) Delete(ctx context.Context, id int) error {
+func (r *ConfigurationRepository) Delete(ctx context.Context, id int64) error {
 	result := r.DB.WithContext(ctx).Where("id = ?", id).Delete(&Configuration{})
 	if result.Error != nil {
 		return result.Error

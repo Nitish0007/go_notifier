@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Nitish0007/go_notifier/internal/features/emailcontact"
+	"github.com/Nitish0007/go_notifier/internal/shared/sharedhelper"
 	"github.com/google/uuid"
 )
 
@@ -20,7 +21,7 @@ func NewContactService(contactRepository *ContactRepository) *ContactService {
 	}
 }
 
-func (s *ContactService) GetContacts(ctx context.Context, accID int) ([]*ContactResponse, error) {
+func (s *ContactService) GetContacts(ctx context.Context, accID int64) ([]*ContactResponse, error) {
 	contacts, err := s.contactRepository.GetContacts(ctx, accID)
 	if err != nil {
 		return nil, err
@@ -76,7 +77,8 @@ func (s *ContactService) CreateContact(ctx context.Context, payload *CreateConta
 func (s *ContactService) GetContactByKey(ctx context.Context, key string, value any) (*ContactResponse, error) {
 	switch key {
 	case "id":
-		contact, err := s.contactRepository.FindById(ctx, value.(int))
+		accId := int64(sharedhelper.GetCurrentAccountID(ctx))
+		contact, err := s.contactRepository.FindById(ctx, accId, value.(int64))
 		if err != nil {
 			return nil, err
 		}
@@ -91,7 +93,8 @@ func (s *ContactService) GetContactByKey(ctx context.Context, key string, value 
 			UpdatedAt: contact.UpdatedAt,
 		}, nil
 	case "uuid":
-		contact, err := s.contactRepository.FindByUUID(ctx, value.(string))
+		accId := int64(sharedhelper.GetCurrentAccountID(ctx))
+		contact, err := s.contactRepository.FindByUUID(ctx, accId, value.(string))
 		if err != nil {
 			return nil, err
 		}
