@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"context"
+	"errors"
 
 	"gorm.io/gorm"
 )
@@ -19,10 +20,16 @@ func NewEmailNotificationRepository(conn *gorm.DB) *EmailNotificationRepository 
 }
 
 func (r *EmailNotificationRepository) Create(ctx context.Context, n *EmailNotification) error {
-	return r.DB.WithContext(ctx).Create(n).Error
+	result := r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(n).Error; err != nil {
+			return errors.New("failed to create email notification: " + err.Error())
+		}
+		return nil
+	})
+	return result
 }
 
-func (r *EmailNotificationRepository) Index(ctx context.Context, accID int) ([]*EmailNotification, error) {
+func (r *EmailNotificationRepository) Index(ctx context.Context, accID int64) ([]*EmailNotification, error) {
 	var notifications []*EmailNotification
 	err := r.DB.WithContext(ctx).Where("account_id = ?", accID).Order("created_at DESC").Find(&notifications).Error
 	return notifications, err
@@ -34,7 +41,7 @@ func (r *EmailNotificationRepository) GetByID(ctx context.Context, id string, ac
 	return &notification, err
 }
 
-func (r *EmailNotificationRepository) GetNotificationsByStatus(ctx context.Context, st EmailNotificationStatus, accID int) ([]*EmailNotification, error) {
+func (r *EmailNotificationRepository) GetNotificationsByStatus(ctx context.Context, st EmailNotificationStatus, accID int64) ([]*EmailNotification, error) {
 	var notifications []*EmailNotification
 
 	n := &EmailNotification{

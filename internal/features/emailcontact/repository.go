@@ -15,27 +15,27 @@ func NewEmailContactRepository(db *gorm.DB) *EmailContactRepository {
 	}
 }
 
-func (r *EmailContactRepository) FindById(ctx context.Context, id int) (*EmailContact, error) {
+func (r *EmailContactRepository) FindById(ctx context.Context, accId int64, id int64) (*EmailContact, error) {
 	var emailContact EmailContact
-	err := r.DB.WithContext(ctx).Where("id = ?", id).First(&emailContact).Error
+	err := r.DB.WithContext(ctx).Where("id = ? AND account_id = ?", id, accId).First(&emailContact).Error
 	if err != nil {
 		return nil, err
 	}
 	return &emailContact, nil
 }
 
-func (r *EmailContactRepository) FindByEmail(ctx context.Context, email string) (*EmailContact, error) {
+func (r *EmailContactRepository) FindByEmail(ctx context.Context, accId int64, email string) (*EmailContact, error) {
 	var emailContact EmailContact
-	err := r.DB.WithContext(ctx).Where("email = ?", email).First(&emailContact).Error
+	err := r.DB.WithContext(ctx).Where("account_id = ? AND email = ?", accId, email).First(&emailContact).Error
 	if err != nil {
 		return nil, err
 	}
 	return &emailContact, nil
 }
 
-func (r *EmailContactRepository) GetEmailContactsByContactID(ctx context.Context, contactID int) (*EmailContact, error) {
+func (r *EmailContactRepository) GetEmailContactsByContactID(ctx context.Context, accId int64, contactID int64) (*EmailContact, error) {
 	var emailContact EmailContact
-	err := r.DB.WithContext(ctx).Where("contact_id = ?", contactID).First(&emailContact).Error
+	err := r.DB.WithContext(ctx).Where("contact_id = ? AND account_id = ?", contactID, accId).First(&emailContact).Error
 	if err != nil {
 		return nil, err
 	}

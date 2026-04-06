@@ -1,0 +1,1 @@
+-- DROP INDEX idx_email_notifications_account_id_title;

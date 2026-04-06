@@ -55,7 +55,7 @@ func TestContactRepository_CreateWithEmail_Success(t *testing.T) {
 	require.NotZero(t, ec.ContactID)
 	require.Equal(t, c.ID, ec.ContactID)
 
-	loaded, err := repo.FindById(context.Background(), c.ID)
+	loaded, err := repo.FindById(context.Background(), int64(acc.ID), int64(c.ID))
 	require.NoError(t, err)
 	require.Equal(t, "Ada", loaded.FirstName)
 	require.NotNil(t, loaded.EmailContact)
@@ -110,8 +110,9 @@ func TestContactRepository_FindById_NotFound(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, database.AutoMigrate(db))
 
+	acc := seedAccount(t, db)
 	repo := contact.NewContactRepository(db, emailcontact.NewEmailContactRepository(db))
-	_, err = repo.FindById(context.Background(), 99999)
+	_, err = repo.FindById(context.Background(), int64(acc.ID), 99999)
 	require.Error(t, err)
 }
 
@@ -131,7 +132,7 @@ func TestContactRepository_FindByUUID(t *testing.T) {
 		AccountID: acc.ID,
 	}))
 
-	found, err := repo.FindByUUID(context.Background(), u)
+	found, err := repo.FindByUUID(context.Background(), int64(acc.ID), u)
 	require.NoError(t, err)
 	require.Equal(t, c.ID, found.ID)
 	require.NotNil(t, found.EmailContact)

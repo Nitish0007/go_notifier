@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX idx_email_notifications_account_id_title ON email_notifications (account_id, title);

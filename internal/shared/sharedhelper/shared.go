@@ -47,15 +47,15 @@ func IsValidUUID(id string) bool {
 	return true
 }
 
-func GetCurrentAccountID(ctx context.Context) int {
-	accountID, ok := ctx.Value(CurrentAccountID).(int)
+func GetCurrentAccountID(ctx context.Context) int64 {
+	accountID, ok := ctx.Value(CurrentAccountID).(int64)
 	if !ok {
 		return -1 // or handle the error as needed
 	}
 	return accountID
 }
 
-func SetCurrentAccountID(ctx context.Context, accountID int) context.Context {
+func SetCurrentAccountID(ctx context.Context, accountID int64) context.Context {
 	return context.WithValue(ctx, CurrentAccountID, accountID)
 }
 
@@ -73,4 +73,12 @@ func ParseTime(timeStr string, layout string) *time.Time {
 func GetCurrentTime() *time.Time {
 	t := time.Now().UTC()
 	return &t
+}
+
+func SetValueToContext(ctx context.Context, key string, value any) context.Context {
+	return context.WithValue(ctx, key, value)
+}
+
+func GetValueFromContext(ctx context.Context, key string) any {
+	return ctx.Value(key)
 }

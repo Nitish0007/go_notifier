@@ -83,13 +83,13 @@ func (h *ConfigurationHandler) DeleteConfigurationHandler(w http.ResponseWriter,
 		return
 	}
 
-	cidInt, err := strconv.Atoi(confID)
+	cidInt64, err := strconv.ParseInt(confID, 10, 64)
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusBadRequest, "Invalid configuration ID")
 		return
 	}
 
-	err = h.configurationService.DeleteConfiguration(ctx, accID, cidInt)
+	err = h.configurationService.DeleteConfiguration(ctx, accID, cidInt64)
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
 		return
@@ -104,7 +104,7 @@ func (h *ConfigurationHandler) UpdateConfigurationHandler(w http.ResponseWriter,
 		return
 	}
 
-	cidInt, err := strconv.Atoi(confID)
+	cidInt64, err := strconv.ParseInt(confID, 10, 64)
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusBadRequest, "Invalid configuration ID")
 		return
@@ -115,7 +115,7 @@ func (h *ConfigurationHandler) UpdateConfigurationHandler(w http.ResponseWriter,
 		api.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	reqData.Configuration.ID = cidInt
+	reqData.Configuration.ID = cidInt64
 	reqData.Configuration.AccountID = sharedhelper.GetCurrentAccountID(r.Context())
 
 	// Validate flat configuration_data by config_type when present

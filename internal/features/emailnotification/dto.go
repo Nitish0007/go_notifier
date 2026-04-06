@@ -7,10 +7,10 @@ import (
 // Request DTOs
 type CreateEmailTransactionalRequest struct {
 	Notification struct {
-		AccountID  		   int 	                   `json:"account_id" validate:"required,gt=0"`
+		AccountID  		   int64 	                 `json:"account_id" validate:"required,gt=0"`
 		Title            string                  `json:"title" validate:"required,max=300"`
 		Subject          string                  `json:"subject" validate:"required,max=500"`
-		ContentID        int                     `json:"content_id" validate:"omitempty,gt=0"`
+		ContentID        int64                   `json:"content_id" validate:"required,gt=0"`
 		NotificationType string                  `json:"notification_type" validate:"omitempty,oneof=transactional"`
 		Status           string                  `json:"status" validate:"omitempty,oneof=trans"`
 	} `json:"notification" validate:"required"`
@@ -18,12 +18,12 @@ type CreateEmailTransactionalRequest struct {
 
 type CreateEmailCampaignRequest struct {
 	Notification struct {
-		AccountID  		   int 	                   `json:"account_id" validate:"required,gt=0"`
+		AccountID  		   int64 	                 `json:"account_id" validate:"required,gt=0"`
 		Title            string                  `json:"title" validate:"required,max=300"`
 		Subject          string                  `json:"subject" validate:"required,max=500"`
-		ContentID        int                     `json:"content_id" validate:"omitempty,gt=0"`
+		ContentID        int64                   `json:"content_id" validate:"required,gt=0"`
 		NotificationType string                  `json:"notification_type" validate:"omitempty,oneof=campaign"`
-		Status           string                  `json:"status" validate:"required,oneof=trans draft send_now scheduled"`
+		Status           string                  `json:"status" validate:"required,oneof=draft send_now scheduled"`
 		SendAt           *string                 `json:"send_at" validate:"omitempty"`
 	} `json:"notification" validate:"required"`
 }

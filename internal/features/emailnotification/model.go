@@ -26,18 +26,18 @@ const (
 
 type EmailNotification struct {
 	ID               int64                    `json:"id" gorm:"primaryKey" validate:"omitempty,gt=0"`
-	AccountID        int                      `json:"account_id" gorm:"not null;index" validate:"required,gt=0"`
+	AccountID        int64                    `json:"account_id" gorm:"not null;index" validate:"required,gt=0"`
 	Subject          string                   `json:"subject" gorm:"size:500" validate:"omitempty,max=500"`
 	Title            string                   `json:"title" gorm:"size:300" validate:"omitempty,max=300"`
 	NotificationType EmailNotificationType    `json:"notification_type" gorm:"not null;default:0;check:notification_type IN (0,1)" validate:"-"` // 0 = transactional, 1 = campaign
-	ContentID        int                      `json:"content_id" gorm:"not null;index" validate:"omitempty,gt=0"`
+	ContentID        int64                    `json:"content_id" gorm:"not null;index" validate:"omitempty,gt=0"`
 	Status           EmailNotificationStatus  `json:"status" gorm:"not null;default:0;check:status IN (0,1,2,3)" validate:"-"` // Custom validation needed for enum
 	SendAt           *time.Time               `json:"send_at" validate:"-"`
 	SentAt           *time.Time               `json:"sent_at" validate:"-"`
 	CreatedAt        time.Time                `json:"created_at" gorm:"autoCreateTime" validate:"-"`
 }
 
-func NewEmailNotification(accountId int, subject string, title string, notificationType EmailNotificationType, contentId int, status EmailNotificationStatus, sendAt *time.Time) *EmailNotification {
+func NewEmailNotification(accountId int64, subject string, title string, notificationType EmailNotificationType, contentId int64, status EmailNotificationStatus, sendAt *time.Time) *EmailNotification {
 	return &EmailNotification{
 		AccountID: accountId,
 		Subject: subject,
@@ -141,7 +141,7 @@ func (n *EmailNotification) ResponseMap() (map[string]any, error) {
 func (n *EmailNotification) GetSubject() string     					{ return n.Subject }
 func (n *EmailNotification) GetTitle() string     					{ return n.Title }
 func (n *EmailNotification) GetNotificationType() EmailNotificationType 	{ return n.NotificationType }
-func (n *EmailNotification) GetContentID() int 						{ return n.ContentID }
+func (n *EmailNotification) GetContentID() int64 						{ return n.ContentID }
 // func (n *EmailNotification) GetStatus() EmailNotificationStatus 	{ return n.Status }
 // func (n *EmailNotification) GetAccountID() int 							{ return n.AccountID }
 // func (n *EmailNotification) GetSendAt() *time.Time 					{ return n.SendAt }

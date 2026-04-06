@@ -51,8 +51,8 @@ func (s WebAppConfiguration) ToMap() map[string]any {
 }
 
 type Configuration struct {
-	ID                   int            `json:"id" gorm:"primaryKey" validate:"-"`
-	AccountID            int            `json:"account_id" gorm:"not null;index" validate:"required,gt=0"`
+	ID                   int64            `json:"id" gorm:"primaryKey" validate:"-"`
+	AccountID            int64            `json:"account_id" gorm:"not null;index" validate:"required,gt=0"`
 	DefaultConfiguration bool           `json:"default_configuration" gorm:"default:false" validate:"-"`
 	ConfigurationData    map[string]any `json:"configuration_data" gorm:"serializer:json" validate:"required"`
 	ConfigType           string         `json:"config_type" gorm:"not null" validate:"required,oneof=smtp in_app"`

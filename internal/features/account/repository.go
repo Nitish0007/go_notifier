@@ -52,7 +52,7 @@ func (r *AccountRepository) RegisterAccount(ctx context.Context, account *Accoun
 	return result
 }
 
-func (r *AccountRepository) GetApiKeyByAccountID(ctx context.Context, accountID int) (string, error) {
+func (r *AccountRepository) GetApiKeyByAccountID(ctx context.Context, accountID int64) (string, error) {
 	var apiKey apiKey.ApiKey
 	result := r.DB.WithContext(ctx).Where("account_id = ?", accountID).First(&apiKey)
 	if result.Error != nil {

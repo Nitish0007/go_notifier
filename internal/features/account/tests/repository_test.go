@@ -91,7 +91,7 @@ func TestAccountRepository_RegisterAccount_Success(t *testing.T) {
 		t.Fatalf("Register Account should succeed: %v", err)
 	}
 
-	apiKey, err := apiKeyRepo.FindByAccountID(context.Background(), testAccount.ID)
+	apiKey, err := apiKeyRepo.FindByKeyAndAccountID(context.Background(), "", testAccount.ID)
 	if err != nil {
 		t.Fatalf("Find by account ID should succeed: %v", err)
 	}
