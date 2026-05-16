@@ -1,11 +1,11 @@
 package list
 
 import (
-	"fmt"
-	"time"
 	"context"
+	"fmt"
+	"strconv"
+
 	"github.com/Nitish0007/go_notifier/internal/shared/sharedhelper"
-	"github.com/Nitish0007/go_notifier/internal/features/contact"
 )
 
 type ListService struct {
@@ -13,7 +13,7 @@ type ListService struct {
 }
 
 func NewListService(listRepository *ListRepository) *ListService {
-	return &ListService {
+	return &ListService{
 		listRepository: listRepository,
 	}
 }
@@ -27,12 +27,12 @@ func (s *ListService) GetLists(ctx context.Context, accID int64) ([]*CreateListR
 	listResponses := make([]*CreateListResponse, len(lists))
 	for i, list := range lists {
 		listResponses[i] = &CreateListResponse{
-			ID: list.ID,
-			AccountID: list.AccountID,
-			Name: list.Name,
+			ID:            list.ID,
+			AccountID:     list.AccountID,
+			Name:          list.Name,
 			ContactsCount: list.ContactsCount,
-			CreatedAt: list.CreatedAt,
-			UpdatedAt: list.UpdatedAt,
+			CreatedAt:     list.CreatedAt,
+			UpdatedAt:     list.UpdatedAt,
 		}
 	}
 	return listResponses, nil
@@ -45,69 +45,44 @@ func (s *ListService) CreateList(ctx context.Context, payload *CreateListRequest
 		return nil, fmt.Errorf("failed to create list: %w", err)
 	}
 	return &CreateListResponse{
-		ID: list.ID,
-		AccountID: list.AccountID,
-		Name: list.Name,
+		ID:            list.ID,
+		AccountID:     list.AccountID,
+		Name:          list.Name,
 		ContactsCount: list.ContactsCount,
-		CreatedAt: list.CreatedAt,
-		UpdatedAt: list.UpdatedAt,
+		CreatedAt:     list.CreatedAt,
+		UpdatedAt:     list.UpdatedAt,
 	}, nil
 }
 
 func (s *ListService) SubscribeToList(ctx context.Context, payload *SubscribeToListRawPayload) (*SubscribeToListResponse, error) {
-	listID := sharedhelper.GetValueFromContext(ctx, "listID")
-	if listID == nil {
+	listIDVal := sharedhelper.GetValueFromContext(ctx, "listID")
+	if listIDVal == nil {
 		return nil, fmt.Errorf("list id not found in context")
 	}
-	listIDInt, ok := listID.(int64)
-	if !ok {
-		return nil, fmt.Errorf("list id is not an integer")
+	listIDStr, ok := listIDVal.(string)
+	if !ok || listIDStr == "" {
+		return nil, fmt.Errorf("invalid list id in context")
 	}
-
-	accId := int64(sharedhelper.GetCurrentAccountID(ctx))
-
-	var reqData *SubscribeToListRequest
-	reqData = &SubscribeToListRequest{
-		AccountID: accId,
-		ListID: listIDInt,
-		Active: payload.Active,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	}
-
-	if payload.ContactID > 0 {
-		contact, err := s.listRepository.FindById(ctx, accId, payload.ContactID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to find contact by id: %w", err)
-		}
-		reqData.ContactID = contact.ID
-	} else if payload.UUID != "" {
-		contact, err := s.listRepository.FindContactByUUID(ctx, accId, payload.UUID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to find contact by uuid: %w", err)
-		}
-		reqData.ContactID = contact.ID
-	} else if payload.EmailContact.Email != "" {
-		contact, err := s.listRepository.FindOrCreateEmailContact(ctx, accId, &contact.ContactPayload{
-			Email: payload.EmailContact.Email,
-			FirstName: payload.EmailContact.FirstName,
-			LastName: payload.EmailContact.LastName,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to find or create contact by email: %w", err)
-		}
-		reqData.ContactID = contact.ID
-	}
-
-	err := s.listRepository.CreateListSubscription(ctx, reqData)
+	listIDInt, err := strconv.ParseInt(listIDStr, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create list subscription: %w", err)
+		return nil, fmt.Errorf("invalid list id: %w", err)
 	}
-	return &SubscribeToListResponse{
-		ListID: reqData.ListID,
-		ContactID: reqData.ContactID,
-		Active: reqData.Active,
-		CreatedAt: reqData.CreatedAt,
-		UpdatedAt: reqData.UpdatedAt,
-	}, nil
+
+	accID := sharedhelper.GetCurrentAccountID(ctx)
+	return s.listRepository.SubscribeToList(ctx, accID, listIDInt, payload)
+}
+
+func (s *ListService) GetSubscribers(ctx context.Context) ([]*SubscriberResponse, error) {
+	accId := sharedhelper.GetCurrentAccountID(ctx)
+	listId := sharedhelper.GetValueFromContext(ctx, "listID")
+	listIdInt64, err := strconv.ParseInt(listId.(string), 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse list id: %w", err)
+	}
+
+	subscribers, err := s.listRepository.GetSubscribers(ctx, accId, listIdInt64)
+	if err != nil {
+		return nil, err
+	}
+	return subscribers, nil
 }

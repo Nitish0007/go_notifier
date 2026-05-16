@@ -30,12 +30,15 @@ func (h *ContactHandler) GetContactsHandler(w http.ResponseWriter, r *http.Reque
 
 func (h *ContactHandler) CreateContactHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	reqData, err := api.ParseAndValidateRequest[CreateContactRequest](r)
+	reqData, err := api.ParseJSONBody[CreateContactRequest](r)
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
+	accID := sharedhelper.GetCurrentAccountID(ctx)
+	reqData.Contact.AccountID = accID
+	reqData, err = api.ValidateRequestData(reqData)
 	contact, err := h.contactService.CreateContact(ctx, reqData)
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
@@ -58,7 +61,7 @@ func (h *ContactHandler) GetContactByIdHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	ctx := r.Context()
-	contact, err := h.contactService.GetContactByKey(ctx, "id", idInt)
+	contact, err := h.contactService.GetContactByKey(ctx, "id", int64(idInt))
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
 		return

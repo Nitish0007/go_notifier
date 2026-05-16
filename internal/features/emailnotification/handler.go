@@ -77,7 +77,16 @@ func (h *EmailNotificationHandler) CreateNotificationHandler(w http.ResponseWrit
 }
 
 func (h *EmailNotificationHandler) CreateEmailTransactionalHandler(w http.ResponseWriter, r *http.Request) {
-	payload, err := api.ParseAndValidateRequest[CreateEmailTransactionalRequest](r)
+	payload, err := api.ParseJSONBody[CreateEmailTransactionalRequest](r)
+	if err != nil {
+		api.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	accID := sharedhelper.GetCurrentAccountID(r.Context())
+	payload.Notification.AccountID = accID
+
+	payload, err = api.ValidateRequestData(payload)
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
@@ -93,8 +102,6 @@ func (h *EmailNotificationHandler) CreateEmailTransactionalHandler(w http.Respon
 	api.WriteResponse(w, http.StatusCreated, trans_notif, "Email Transactional Notification created successfully")
 }
 
-// TODO: add pagination and filtering
-// index api for notifications in context of account
 func (h *EmailNotificationHandler) GetNotificationsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	accID := sharedhelper.GetCurrentAccountID(ctx)

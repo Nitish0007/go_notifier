@@ -3,13 +3,19 @@ CREATE TABLE email_notifications (
   account_id BIGINT NOT NULL,
   subject VARCHAR(500) NOT NULL CHECK (subject <> ''),
   title VARCHAR(300) NOT NULL CHECK (title <> ''),
-  notification_type INTEGER NOT NULL CHECK (notification_type IN (0, 1)), -- 0 = transactional, 1 = campaign(sent to bulk contacts)
-  content_id BIGINT,
+  notification_type INTEGER NOT NULL CHECK (notification_type IN (0, 1)),
+  -- 0 = transactional, 1 = campaign
 
-  status INTEGER NOT NULL DEFAULT 0 CHECK (status IN (0, 1, 2, 3)), -- [0 - pending, 1 - enqueued, 2 - sent, 3 - failed]
-  sent_at TIMESTAMP, -- delivered time
+  content_id BIGINT NOT NULL,
+
+  -- Matches Go emailnotification.EmailNotificationStatus (iota 0..5)
+  -- 0 Trans, 1 Draft, 2 Scheduled, 3 Enqueued, 4 Sent, 5 Failed
+  status INTEGER NOT NULL DEFAULT 0 CHECK (status IN (0, 1, 2, 3, 4, 5)),
+
+  send_at TIMESTAMP,
+  sent_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT now(),
-  send_at TIMESTAMP, -- time for triggering delivery from system
+  updated_at TIMESTAMP DEFAULT now(),
 
   FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE
 );

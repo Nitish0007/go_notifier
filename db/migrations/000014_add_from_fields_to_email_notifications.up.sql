@@ -1,0 +1,4 @@
+ALTER TABLE email_notifications
+  ADD COLUMN from_name VARCHAR(255) NOT NULL DEFAULT '',
+  ADD COLUMN from_email VARCHAR(320) NOT NULL DEFAULT '',
+  ADD COLUMN reply_to_email VARCHAR(320) NOT NULL DEFAULT '';

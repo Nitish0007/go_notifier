@@ -23,6 +23,7 @@ func NewJobMetadata(retryCount int, maxRetries int, retryDelay time.Duration) *J
 		RetryDelay: retryDelay,
 	}
 }
+
 func StoreJobMetadata(ctx context.Context, jobID string, metadata JobMetadata) error {
 	key := fmt.Sprintf("jmd:%s", jobID)
 	err := redis_utils.SetRedisJSON(ctx, key, metadata, 0)

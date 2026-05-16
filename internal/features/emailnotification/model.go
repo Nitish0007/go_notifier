@@ -1,10 +1,10 @@
 package emailnotification
 
 import (
-	"time"
+	"encoding/json"
 	"errors"
 	"strings"
-	"encoding/json"
+	"time"
 )
 
 type EmailNotificationStatus int
@@ -25,28 +25,34 @@ const (
 )
 
 type EmailNotification struct {
-	ID               int64                    `json:"id" gorm:"primaryKey" validate:"omitempty,gt=0"`
-	AccountID        int64                    `json:"account_id" gorm:"not null;index" validate:"required,gt=0"`
-	Subject          string                   `json:"subject" gorm:"size:500" validate:"omitempty,max=500"`
-	Title            string                   `json:"title" gorm:"size:300" validate:"omitempty,max=300"`
-	NotificationType EmailNotificationType    `json:"notification_type" gorm:"not null;default:0;check:notification_type IN (0,1)" validate:"-"` // 0 = transactional, 1 = campaign
-	ContentID        int64                    `json:"content_id" gorm:"not null;index" validate:"omitempty,gt=0"`
-	Status           EmailNotificationStatus  `json:"status" gorm:"not null;default:0;check:status IN (0,1,2,3)" validate:"-"` // Custom validation needed for enum
-	SendAt           *time.Time               `json:"send_at" validate:"-"`
-	SentAt           *time.Time               `json:"sent_at" validate:"-"`
-	CreatedAt        time.Time                `json:"created_at" gorm:"autoCreateTime" validate:"-"`
+	ID               int64                   `json:"id" gorm:"primaryKey" validate:"omitempty,gt=0"`
+	AccountID        int64                   `json:"account_id" gorm:"not null;index" validate:"required,gt=0"`
+	Subject          string                  `json:"subject" gorm:"size:500" validate:"omitempty,max=500"`
+	Title            string                  `json:"title" gorm:"size:300" validate:"omitempty,max=300"`
+	FromName         string                  `json:"from_name" gorm:"size:255;not null;default:''" validate:"required,max=255"`
+	FromEmail        string                  `json:"from_email" gorm:"size:320;not null;default:''" validate:"required,email,max=320"`
+	ReplyToEmail     string                  `json:"reply_to_email" gorm:"size:320;not null;default:''" validate:"required,email,max=320"`
+	NotificationType EmailNotificationType   `json:"notification_type" gorm:"not null;default:0;check:notification_type IN (0,1)" validate:"-"` // 0 = transactional, 1 = campaign
+	ContentID        int64                   `json:"content_id" gorm:"not null;index" validate:"omitempty,gt=0"`
+	Status           EmailNotificationStatus `json:"status" gorm:"not null;default:0;check:status IN (0,1,2,3,4,5)" validate:"-"` // Trans..Failed (see const block)
+	SendAt           *time.Time              `json:"send_at" validate:"-"`
+	SentAt           *time.Time              `json:"sent_at" validate:"-"`
+	CreatedAt        time.Time               `json:"created_at" gorm:"autoCreateTime" validate:"-"`
 }
 
-func NewEmailNotification(accountId int64, subject string, title string, notificationType EmailNotificationType, contentId int64, status EmailNotificationStatus, sendAt *time.Time) *EmailNotification {
+func NewEmailNotification(accountID int64, subject, title string, notificationType EmailNotificationType, contentID int64, status EmailNotificationStatus, sendAt *time.Time, fromName, fromEmail, replyToEmail string) *EmailNotification {
 	return &EmailNotification{
-		AccountID: accountId,
-		Subject: subject,
-		Title: title,
+		AccountID:        accountID,
+		Subject:          subject,
+		Title:            title,
+		FromName:         fromName,
+		FromEmail:        fromEmail,
+		ReplyToEmail:     replyToEmail,
 		NotificationType: notificationType,
-		ContentID: contentId,
-		Status: status,
-		SendAt: sendAt,
-		SentAt: nil,
+		ContentID:        contentID,
+		Status:           status,
+		SendAt:           sendAt,
+		SentAt:           nil,
 	}
 }
 
@@ -62,13 +68,25 @@ func StringToEmailNotificationType(notificationType string) (EmailNotificationTy
 	}
 }
 
+func NotificationTypeToString(notificationType EmailNotificationType) (string, error) {
+	switch notificationType {
+	case Transactional:
+		return "transactional", nil
+	case Campaign:
+		return "campaign", nil
+	default:
+		return "", errors.New("invalid notification type")
+	}
+}
+
 func StringToEmailNotificationStatus(status string) (EmailNotificationStatus, error) {
-	switch status {
+	s := strings.ToLower(strings.TrimSpace(status))
+	switch s {
 	case "trans":
 		return Trans, nil
 	case "draft":
 		return Draft, nil
-	case "scheduled":
+	case "scheduled", "send_now":
 		return Scheduled, nil
 	case "enqueued":
 		return Enqueued, nil
@@ -84,7 +102,7 @@ func StringToEmailNotificationStatus(status string) (EmailNotificationStatus, er
 func StatusToString(status EmailNotificationStatus) (string, error) {
 	switch status {
 	case Trans:
-		return "pending", nil
+		return "trans", nil
 	case Draft:
 		return "draft", nil
 	case Scheduled:
@@ -92,7 +110,7 @@ func StatusToString(status EmailNotificationStatus) (string, error) {
 	case Enqueued:
 		return "enqueued", nil
 	case Sent:
-		return "sent", nil	
+		return "sent", nil
 	case Failed:
 		return "failed", nil
 	default:
@@ -120,28 +138,31 @@ func (n *EmailNotification) ToMap() (map[string]any, error) {
 func (n *EmailNotification) ResponseMap() (map[string]any, error) {
 	statusString, err := StatusToString(n.Status)
 	if err != nil {
-		return nil, err	
+		return nil, err
 	}
 	return map[string]any{
-		"id": n.ID,
-		"account_id": n.AccountID,
-		"subject": n.Subject,
-		"title": n.Title,
+		"id":                n.ID,
+		"account_id":        n.AccountID,
+		"subject":           n.Subject,
+		"title":             n.Title,
+		"from_name":         n.FromName,
+		"from_email":        n.FromEmail,
+		"reply_to_email":    n.ReplyToEmail,
 		"notification_type": n.NotificationType,
-		"content_id": n.ContentID,
-		"status": statusString,
-		"send_at": n.SendAt,
-		"sent_at": n.SentAt,
-		"created_at": n.CreatedAt,
+		"content_id":        n.ContentID,
+		"status":            statusString,
+		"send_at":           n.SendAt,
+		"sent_at":           n.SentAt,
+		"created_at":        n.CreatedAt,
 	}, nil
 }
 
-
 // Implement NotificationView (getter names avoid conflict with struct fields).
-func (n *EmailNotification) GetSubject() string     					{ return n.Subject }
-func (n *EmailNotification) GetTitle() string     					{ return n.Title }
-func (n *EmailNotification) GetNotificationType() EmailNotificationType 	{ return n.NotificationType }
-func (n *EmailNotification) GetContentID() int64 						{ return n.ContentID }
+func (n *EmailNotification) GetSubject() string                         { return n.Subject }
+func (n *EmailNotification) GetTitle() string                           { return n.Title }
+func (n *EmailNotification) GetNotificationType() EmailNotificationType { return n.NotificationType }
+func (n *EmailNotification) GetContentID() int64                        { return n.ContentID }
+
 // func (n *EmailNotification) GetStatus() EmailNotificationStatus 	{ return n.Status }
 // func (n *EmailNotification) GetAccountID() int 							{ return n.AccountID }
 // func (n *EmailNotification) GetSendAt() *time.Time 					{ return n.SendAt }

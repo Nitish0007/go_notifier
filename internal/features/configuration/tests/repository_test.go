@@ -39,9 +39,9 @@ func TestConfigurationRepository_Create_And_Index(t *testing.T) {
 
 	cfg := &configuration.Configuration{
 		AccountID:            acc.ID,
-		DefaultConfiguration: false,
+		IsDefault:            false,
 		ConfigType:           "smtp",
-		ConfigurationData: map[string]any{
+		Settings: map[string]any{
 			"host": "smtp.example.com", "port": float64(587),
 			"username": "u", "password": "p", "from": "from@example.com",
 		},
@@ -65,15 +65,15 @@ func TestConfigurationRepository_GetByAccountID_DefaultTrue(t *testing.T) {
 
 	row := &configuration.Configuration{
 		AccountID:            acc.ID,
-		DefaultConfiguration: true,
+		IsDefault:            true,
 		ConfigType:           "smtp",
-		ConfigurationData:    map[string]any{"host": "h", "port": float64(1)},
+		Settings:             map[string]any{"host": "h", "port": float64(1)},
 	}
 	require.NoError(t, db.Session(&gorm.Session{SkipHooks: true}).Create(row).Error)
 
 	found, err := repo.GetByAccountID(context.Background(), acc.ID)
 	require.NoError(t, err)
-	require.True(t, found.DefaultConfiguration)
+	require.True(t, found.IsDefault)
 	require.Equal(t, acc.ID, found.AccountID)
 }
 
@@ -87,15 +87,15 @@ func TestConfigurationRepository_GetByAccountIDAndConfigType(t *testing.T) {
 
 	require.NoError(t, repo.Create(context.Background(), &configuration.Configuration{
 		AccountID:            acc.ID,
-		DefaultConfiguration: false,
+		IsDefault:            false,
 		ConfigType:           "smtp",
-		ConfigurationData:    map[string]any{"host": "x", "port": float64(25)},
+		Settings:             map[string]any{"host": "x", "port": float64(25)},
 	}))
 
 	found, err := repo.GetByAccountIDAndConfigType(context.Background(), acc.ID, "smtp")
 	require.NoError(t, err)
 	require.Equal(t, "smtp", found.ConfigType)
-	require.False(t, found.DefaultConfiguration)
+	require.False(t, found.IsDefault)
 }
 
 func TestConfigurationRepository_Update(t *testing.T) {
@@ -108,18 +108,18 @@ func TestConfigurationRepository_Update(t *testing.T) {
 
 	cfg := &configuration.Configuration{
 		AccountID:            acc.ID,
-		DefaultConfiguration: false,
+		IsDefault:            false,
 		ConfigType:           "smtp",
-		ConfigurationData:    map[string]any{"host": "old", "port": float64(25)},
+		Settings:             map[string]any{"host": "old", "port": float64(25)},
 	}
 	require.NoError(t, repo.Create(context.Background(), cfg))
 
-	cfg.ConfigurationData = map[string]any{"host": "newhost", "port": float64(587)}
+	cfg.Settings = map[string]any{"host": "newhost", "port": float64(587)}
 	require.NoError(t, repo.Update(context.Background(), cfg))
 
 	reloaded, err := repo.GetByFields(context.Background(), map[string]any{"id": cfg.ID})
 	require.NoError(t, err)
-	require.Equal(t, "newhost", reloaded.ConfigurationData["host"])
+	require.Equal(t, "newhost", reloaded.Settings["host"])
 }
 
 func TestConfigurationRepository_Delete(t *testing.T) {
@@ -132,9 +132,9 @@ func TestConfigurationRepository_Delete(t *testing.T) {
 
 	cfg := &configuration.Configuration{
 		AccountID:            acc.ID,
-		DefaultConfiguration: false,
+		IsDefault:            false,
 		ConfigType:           "in_app",
-		ConfigurationData:    map[string]any{"web_app_url": "https://a.example", "web_app_secret": "s", "web_app_token": "t"},
+		Settings:             map[string]any{"web_app_url": "https://a.example", "web_app_secret": "s", "web_app_token": "t"},
 	}
 	require.NoError(t, repo.Create(context.Background(), cfg))
 
@@ -153,9 +153,9 @@ func TestConfigurationRepository_GetByFields(t *testing.T) {
 
 	cfg := &configuration.Configuration{
 		AccountID:            acc.ID,
-		DefaultConfiguration: false,
+		IsDefault:            false,
 		ConfigType:           "smtp",
-		ConfigurationData:    map[string]any{"host": "byfields"},
+		Settings:             map[string]any{"host": "byfields"},
 	}
 	require.NoError(t, repo.Create(context.Background(), cfg))
 

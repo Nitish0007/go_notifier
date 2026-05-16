@@ -2,7 +2,9 @@ package content
 
 import (
 	"net/http"
+
 	"github.com/Nitish0007/go_notifier/internal/shared/api"
+	"github.com/Nitish0007/go_notifier/internal/shared/sharedhelper"
 )
 
 type ContentHandler struct {
@@ -23,6 +25,9 @@ func (h *ContentHandler) CreateContentHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	ctx := r.Context()
+	accID := sharedhelper.GetCurrentAccountID(ctx)
+	payload.Content.AccountID = accID
+
 	content, err := h.contentService.CreateContent(ctx, payload)
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())

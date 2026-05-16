@@ -8,8 +8,7 @@ import (
 func RegisterContactRoutes(conn *gorm.DB, r chi.Router, h *ContactHandler) {
 	r.Get("/contacts", h.GetContactsHandler)
 	r.Post("/contacts", h.CreateContactHandler)
-	r.Get("/contacts/{id}", h.GetContactByIdHandler)
-	r.Get("/contacts/{uuid}", h.GetContactByUUIDHandler)
+	r.Get("/contact/{id}", h.GetContactByIdHandler)
 	// r.Put("/contacts/{id}", h.UpdateContactHandler)
 	// r.Delete("/contacts/{id}", h.DeleteContactHandler) // soft deletion only
 }

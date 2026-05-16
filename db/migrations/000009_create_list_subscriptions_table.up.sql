@@ -12,4 +12,3 @@ CREATE TABLE list_subscriptions (
 
 CREATE INDEX idx_list_subscriptions_list_id ON list_subscriptions (list_id);
 CREATE INDEX idx_list_subscriptions_contact_id ON list_subscriptions (contact_id);
-CREATE UNIQUE INDEX idx_list_subscriptions_list_id_contact_id ON list_subscriptions (list_id, contact_id);

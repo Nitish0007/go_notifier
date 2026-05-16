@@ -13,10 +13,10 @@ type ConfigurationType string
 
 const (
 	SMTPConfig   ConfigurationType = "smtp"
-	WebAppConfig ConfigurationType = "in_app" // this is for web app notifications
+	WebAppConfig   ConfigurationType = "web_app"
 )
 
-type ConfigData struct {
+type Settings struct {
 	SMTPConfiguration   SMTPConfiguration   `json:"smtp_configuration" validate:"omitempty"`
 	WebAppConfiguration WebAppConfiguration `json:"web_app_configuration" validate:"omitempty"`
 }
@@ -51,24 +51,27 @@ func (s WebAppConfiguration) ToMap() map[string]any {
 }
 
 type Configuration struct {
-	ID                   int64            `json:"id" gorm:"primaryKey" validate:"-"`
-	AccountID            int64            `json:"account_id" gorm:"not null;index" validate:"required,gt=0"`
-	DefaultConfiguration bool           `json:"default_configuration" gorm:"default:false" validate:"-"`
-	ConfigurationData    map[string]any `json:"configuration_data" gorm:"serializer:json" validate:"required"`
-	ConfigType           string         `json:"config_type" gorm:"not null" validate:"required,oneof=smtp in_app"`
+	ID                   int64          `json:"id" gorm:"primaryKey" validate:"-"`
+	AccountID            int64          `json:"account_id" gorm:"not null;index" validate:"required,gt=0"`
+	IsDefault            bool           `json:"is_default" gorm:"default:false" validate:"-"`
+	Settings             map[string]any `json:"settings" gorm:"serializer:json" validate:"required"`
+	ConfigType           ConfigurationType            `json:"config_type" gorm:"not null" validate:"required,oneof=0 1"`
 	CreatedAt            time.Time      `json:"created_at" gorm:"autoCreateTime" validate:"-"`
 	UpdatedAt            time.Time      `json:"updated_at" gorm:"autoUpdateTime" validate:"-"`
 }
 
 func (c *Configuration) BeforeSave(tx *gorm.DB) error {
 	// check uniqueness for account_id, config_type and default_configuration
-	if c.DefaultConfiguration {
+	if c.IsDefault {
 		var existingConfig Configuration
-		err := tx.Where("account_id = ? AND config_type = ? AND default_configuration = ?", c.AccountID, c.ConfigType, true).First(&existingConfig).Error
+		err := tx.Where("account_id = ? AND config_type = ? AND is_default = ?", c.AccountID, c.ConfigType, true).First(&existingConfig).Error
+		if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
 		if err != nil {
 			return err
 		}
-		if existingConfig.ID != c.ID {
+		if c.ID > 0 && existingConfig.ID != c.ID {
 			return errors.New("default configuration already exists")
 		}
 	}
@@ -81,8 +84,8 @@ func NewConfiguration(payload *ConfigurationRequest) (*Configuration, error) {
 	configType := ConfigurationType(payload.Configuration.ConfigType)
 	accountID := payload.Configuration.AccountID
 	defaultConfig := false
-	if payload.Configuration.DefaultConfiguration != nil {
-		defaultConfig = *payload.Configuration.DefaultConfiguration
+	if payload.Configuration.IsDefault != nil {
+		defaultConfig = *payload.Configuration.IsDefault
 	}
 
 	configData := payload.Configuration.ConfigurationData
@@ -92,9 +95,9 @@ func NewConfiguration(payload *ConfigurationRequest) (*Configuration, error) {
 
 	cfg := &Configuration{
 		AccountID:            accountID,
-		DefaultConfiguration: defaultConfig,
-		ConfigType:           string(configType),
-		ConfigurationData:    configData,
+		IsDefault:            defaultConfig,
+		ConfigType:           configType,
+		Settings:             configData,
 	}
 	if payload.Configuration.ID > 0 {
 		cfg.ID = payload.Configuration.ID
@@ -103,7 +106,7 @@ func NewConfiguration(payload *ConfigurationRequest) (*Configuration, error) {
 }
 
 func (c *Configuration) ToSMTPConfiguration() (*SMTPConfiguration, error) {
-	jsonData, err := json.Marshal(c.ConfigurationData)
+	jsonData, err := json.Marshal(c.Settings)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +118,7 @@ func (c *Configuration) ToSMTPConfiguration() (*SMTPConfiguration, error) {
 }
 
 func (c *Configuration) ToWebAppConfiguration() (*WebAppConfiguration, error) {
-	jsonData, err := json.Marshal(c.ConfigurationData)
+	jsonData, err := json.Marshal(c.Settings)
 	if err != nil {
 		return nil, err
 	}

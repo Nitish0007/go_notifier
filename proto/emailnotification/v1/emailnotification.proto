@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package emailnotification.v1;
+option go_package = "github.com/Nitish0007/go_notifier/pkg/gen/emailnotification/v1";
+
+service EmailNotificationService {
+  // rpc CreateEmailTransactional(CreateEmailTransactionalRequest) returns (CreateEmailTransactionalResponse);
+  // rpc CreateEmailCampaign(CreateEmailCampaignRequest) returns (CreateEmailCampaignResponse);
+  // rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
+}
+
+// message CreateEmailTransactionalRequest {

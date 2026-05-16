@@ -27,7 +27,7 @@ func (s *ConfigurationService) CreateConfiguration(ctx context.Context, payload 
 	configRequest := ConfigurationRequest{
 		Configuration: ConfigurationPayload{
 			AccountID: payload.Configuration.AccountID,
-			DefaultConfiguration: payload.Configuration.DefaultConfiguration,
+			IsDefault: payload.Configuration.IsDefault,
 			ConfigType: payload.Configuration.ConfigType,
 			ConfigurationData: payload.Configuration.ConfigurationData,
 		},
@@ -52,7 +52,7 @@ func (s *ConfigurationService) UpdateConfiguration(ctx context.Context, payload 
 		Configuration: ConfigurationPayload{
 			ID: payload.Configuration.ID,
 			AccountID: payload.Configuration.AccountID,
-			DefaultConfiguration: payload.Configuration.DefaultConfiguration,
+			IsDefault: payload.Configuration.IsDefault,
 			ConfigType: payload.Configuration.ConfigType,
 			ConfigurationData: payload.Configuration.ConfigurationData,
 		},

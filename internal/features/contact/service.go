@@ -35,6 +35,9 @@ func (s *ContactService) GetContacts(ctx context.Context, accID int64) ([]*Conta
 			AccountID: contact.AccountID,
 			FirstName: contact.FirstName,
 			LastName:  contact.LastName,
+			CreatedAt: contact.CreatedAt,
+			UpdatedAt: contact.UpdatedAt,
+			Email:     contact.EmailContact.Email,
 		}
 	}
 	return contactResponses, nil
@@ -75,9 +78,10 @@ func (s *ContactService) CreateContact(ctx context.Context, payload *CreateConta
 }
 
 func (s *ContactService) GetContactByKey(ctx context.Context, key string, value any) (*ContactResponse, error) {
+	accId := sharedhelper.GetCurrentAccountID(ctx)
+
 	switch key {
 	case "id":
-		accId := int64(sharedhelper.GetCurrentAccountID(ctx))
 		contact, err := s.contactRepository.FindById(ctx, accId, value.(int64))
 		if err != nil {
 			return nil, err
@@ -93,7 +97,6 @@ func (s *ContactService) GetContactByKey(ctx context.Context, key string, value 
 			UpdatedAt: contact.UpdatedAt,
 		}, nil
 	case "uuid":
-		accId := int64(sharedhelper.GetCurrentAccountID(ctx))
 		contact, err := s.contactRepository.FindByUUID(ctx, accId, value.(string))
 		if err != nil {
 			return nil, err

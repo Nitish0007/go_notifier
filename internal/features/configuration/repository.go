@@ -22,7 +22,7 @@ func (r *ConfigurationRepository) Create(ctx context.Context, config *Configurat
 
 func (r *ConfigurationRepository) GetByAccountID(ctx context.Context, accountID int64) (*Configuration, error) {
 	var config Configuration
-	err := r.DB.WithContext(ctx).Where("account_id = ? AND default_configuration = ?", accountID, true).First(&config).Error
+	err := r.DB.WithContext(ctx).Where("account_id = ? AND is_default = ?", accountID, true).First(&config).Error
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +31,7 @@ func (r *ConfigurationRepository) GetByAccountID(ctx context.Context, accountID 
 
 func (r *ConfigurationRepository) GetByAccountIDAndConfigType(ctx context.Context, accountID int64, configType string) (*Configuration, error) {
 	var config Configuration
-	err := r.DB.WithContext(ctx).Where("account_id = ? AND config_type = ? AND default_configuration = ?", accountID, configType, false).First(&config).Error
+	err := r.DB.WithContext(ctx).Where("account_id = ? AND config_type = ? AND is_default = ?", accountID, configType, false).First(&config).Error
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +55,8 @@ func (r *ConfigurationRepository) Update(ctx context.Context, config *Configurat
 	}
 
 	existingConfig.ConfigType = config.ConfigType
-	existingConfig.ConfigurationData = config.ConfigurationData
-	existingConfig.DefaultConfiguration = config.DefaultConfiguration
+	existingConfig.Settings = config.Settings
+	existingConfig.IsDefault = config.IsDefault
 
 	err = r.DB.WithContext(ctx).Save(&existingConfig).Error
 	if err != nil {

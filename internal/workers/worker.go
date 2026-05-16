@@ -1,5 +1,4 @@
 package workers
-
 type Worker interface {
-	Consume()
+	Run()
 }

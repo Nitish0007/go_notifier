@@ -1,0 +1,14 @@
+environement:
+  production:
+    dynamic_queue: false
+    queues:
+      - email_delivery
+      - email_delivery_dlq
+      - email_delivery_retry
+      - schedule_email
+      - schedule_email_dlq
+      - schedule_email_retry
+  development:
+    dynamic_queue: true
+  test:
+    dynamic_queue: true

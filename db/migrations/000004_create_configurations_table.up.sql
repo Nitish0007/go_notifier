@@ -1,8 +1,9 @@
+CREATE TYPE configuration_type AS ENUM ('smtp', 'web_app');
 CREATE TABLE configurations (
   id                      BIGSERIAL PRIMARY KEY,
   account_id              BIGINT NOT NULL,
-  is_default               BOOLEAN DEFAULT FALSE, -- this defines if this is default configuration for account
-  config_type              INT NOT NULL, -- 0 = smtp, 1 = web_app
+  is_default              BOOLEAN DEFAULT FALSE, -- this defines if this is default configuration for account
+  config_type             configuration_type NOT NULL, -- 0 = smtp, 1 = web_app
   settings                JSONB DEFAULT '{}'::JSONB, -- this defines configuration
   created_at              TIMESTAMP DEFAULT now(),
   updated_at              TIMESTAMP DEFAULT now(),

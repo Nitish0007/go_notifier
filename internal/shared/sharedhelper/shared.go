@@ -82,3 +82,17 @@ func SetValueToContext(ctx context.Context, key string, value any) context.Conte
 func GetValueFromContext(ctx context.Context, key string) any {
 	return ctx.Value(key)
 }
+
+// NOTE: comparable only support equality operators not ordering operators
+func GetUniques[T comparable](list []T) []T {
+	seen := make(map[T]struct{}, len(list))
+	out := make([]T, 0, len(list))
+	for _, v := range list {
+		if _, ok := seen[v]; ok {
+			continue
+		}
+		seen[v] = struct{}{}
+		out = append(out, v)
+	}
+	return out
+}

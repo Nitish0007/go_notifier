@@ -17,13 +17,15 @@ func NewListHandler(s *ListService) *ListHandler {
 }
 
 func (h *ListHandler) CreateListHandler(w http.ResponseWriter, r *http.Request) {
-	payload, err := api.ParseAndValidateRequest[CreateListRequest](r)
+	payload, err := api.ParseJSONBody[CreateListRequest](r)
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	ctx := r.Context()
+	accId := sharedhelper.GetCurrentAccountID(ctx)
+	payload.List.AccountID = accId
 	list, err := h.listService.CreateList(ctx, payload)
 	if err != nil {
 		api.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
@@ -66,6 +68,24 @@ func (h *ListHandler) SubscribeToListHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	api.WriteResponse(w, http.StatusOK, response, "Contacts subscribed to list successfully")
+
+}
+
+func (h *ListHandler) GetSubscribedContactsHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	listID, err := api.GetPathParam(r, "id")
+	if err != nil {
+		api.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ctx = sharedhelper.SetValueToContext(ctx, "listID", listID)
+	subscribers, err := h.listService.GetSubscribers(ctx)
+	if err != nil {
+		api.WriteErrorResponse(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	api.WriteResponse(w, http.StatusOK, subscribers, "Subscribers fetched successfully")
 
 }
 
