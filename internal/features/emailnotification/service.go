@@ -94,6 +94,14 @@ func (s *EmailNotificationService) CreateEmailCampaign(ctx context.Context, payl
 	if err := s.notificationRepo.CreateCampaignWithList(ctx, notification, payload.Notification.ListIDs); err != nil {
 		return nil, err
 	}
+	notificationTypeStr, err := NotificationTypeToString(notification.NotificationType)
+	if err != nil {
+		return nil, err
+	}
+	status, err := StatusToString(notification.Status)
+	if err != nil {
+		return nil, err
+	}
 
 	return &EmailCampaignResponse{
 		ID: notification.ID,
@@ -105,8 +113,8 @@ func (s *EmailNotificationService) CreateEmailCampaign(ctx context.Context, payl
 		ReplyToEmail: notification.ReplyToEmail,
 		ContentID: notification.ContentID,
 		ListIDs: payload.Notification.ListIDs,
-		NotificationType: string(notification.NotificationType),
-		Status: string(notification.Status),
+		NotificationType: notificationTypeStr,
+		Status: status,
 		SendAt: notification.SendAt,
 		SentAt: notification.SentAt,
 		CreatedAt: notification.CreatedAt,

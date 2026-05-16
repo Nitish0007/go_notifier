@@ -20,6 +20,7 @@ import (
 	"github.com/Nitish0007/go_notifier/internal/common/mq"
 	"github.com/Nitish0007/go_notifier/internal/workers"
 	accountv1 "github.com/Nitish0007/go_notifier/pkg/gen/account/v1"
+	"github.com/Nitish0007/go_notifier/internal/common/rabbitmq"
 )
 
 func InitializeApplication(db *gorm.DB, router *chi.Mux) {
@@ -53,6 +54,12 @@ func InitializeGRPCServer(db *gorm.DB, grpcServer *grpc.Server) {
 func InitializeWorkers(db *gorm.DB, mqClient mq.MQClient, ctx context.Context) {
 	// Initialize container with all dependencies
 	c := container.NewContainer(db)
+
+	// initialize queues
+	_, err := rabbitmq.InitializeQueues(mqClient)
+	if err != nil {
+		log.Fatalf("Failed to initialize queues: %v", err)
+	}
 
 	// Initialize workers by injecting dependencies
 	emailSchedulerWorker := workers.NewEmailSchedulerWorker(ctx, db, mqClient)

@@ -85,6 +85,11 @@ func (w *EmailSchedulerWorker) pollNotifications() error {
 		log.Printf(">>>>> Error fetching notifications: %v", err)
 		return err
 	}
+	
+	if len(notifications) == 0 {
+		log.Printf("--- [Email Scheduler Worker]	No notifications to be scheduled\n")
+		return nil
+	}
 	err = w.pushNotificationsToDeliveryQueue(notifications)
 	if err != nil {
 		log.Printf(">>>>> Error pushing notifications to delivery queue: %v", err)

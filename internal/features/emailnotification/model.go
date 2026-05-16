@@ -68,6 +68,17 @@ func StringToEmailNotificationType(notificationType string) (EmailNotificationTy
 	}
 }
 
+func NotificationTypeToString(notificationType EmailNotificationType) (string, error) {
+	switch notificationType {
+	case Transactional:
+		return "transactional", nil
+	case Campaign:
+		return "campaign", nil
+	default:
+		return "", errors.New("invalid notification type")
+	}
+}
+
 func StringToEmailNotificationStatus(status string) (EmailNotificationStatus, error) {
 	s := strings.ToLower(strings.TrimSpace(status))
 	switch s {
