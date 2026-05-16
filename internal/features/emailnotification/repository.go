@@ -1,32 +1,48 @@
 package emailnotification
 
 import (
-	"fmt"
-	"log"
 	"context"
 	"errors"
+	"fmt"
+	"log"
 
+	"github.com/Nitish0007/go_notifier/internal/features/emailnotificationlist"
 	"gorm.io/gorm"
 )
 
 type EmailNotificationRepository struct {
-	DB *gorm.DB
+	DB        *gorm.DB
+	emailNotificationListRepo *emailnotificationlist.EmailNotificationListRepository
 }
 
-func NewEmailNotificationRepository(conn *gorm.DB) *EmailNotificationRepository {
+func NewEmailNotificationRepository(conn *gorm.DB, enlr *emailnotificationlist.EmailNotificationListRepository) *EmailNotificationRepository {
 	return &EmailNotificationRepository{
-		DB: conn,
+		DB:        conn,
+		emailNotificationListRepo: enlr,
 	}
 }
 
 func (r *EmailNotificationRepository) Create(ctx context.Context, n *EmailNotification) error {
-	result := r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(n).Error; err != nil {
-			return errors.New("failed to create email notification: " + err.Error())
-		}
-		return nil
+	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		return r.createWithTx(ctx, tx, n)
 	})
-	return result
+}
+
+// CreateCampaignWithList creates an email notification and links it to a list in one transaction.
+func (r *EmailNotificationRepository) CreateCampaignWithList(ctx context.Context, n *EmailNotification, listIDs []int64) error {
+	return r.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := r.createWithTx(ctx, tx, n); err != nil {
+			return err
+		}
+		return r.emailNotificationListRepo.EnsureLinked(ctx, tx, n.AccountID, listIDs, n.ID)
+	})
+}
+
+func (r *EmailNotificationRepository) createWithTx(ctx context.Context, tx *gorm.DB, n *EmailNotification) error {
+	if err := tx.WithContext(ctx).Create(n).Error; err != nil {
+		return errors.New("failed to create email notification: " + err.Error())
+	}
+	return nil
 }
 
 func (r *EmailNotificationRepository) Index(ctx context.Context, accID int64) ([]*EmailNotification, error) {
@@ -35,7 +51,7 @@ func (r *EmailNotificationRepository) Index(ctx context.Context, accID int64) ([
 	return notifications, err
 }
 
-func (r *EmailNotificationRepository) GetByID(ctx context.Context, id string, accID int) (*EmailNotification, error) {
+func (r *EmailNotificationRepository) GetByID(ctx context.Context, id int64, accID int64) (*EmailNotification, error) {
 	var notification EmailNotification
 	err := r.DB.WithContext(ctx).Where("id = ? AND account_id = ?", id, accID).First(&notification).Error
 	return &notification, err

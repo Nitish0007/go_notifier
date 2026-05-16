@@ -1,9 +1,9 @@
 package contact
 
 import (
-	"fmt"
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -90,6 +90,26 @@ func (r *ContactRepository) FindByUUID(ctx context.Context, accId int64, uuid st
 	return &contact, nil
 }
 
+// FindByIDWithTx loads a contact by id scoped to the account using tx.
+func (r *ContactRepository) FindByIDWithTx(ctx context.Context, tx *gorm.DB, accID, id int64) (*Contact, error) {
+	var c Contact
+	err := tx.WithContext(ctx).Where("id = ? AND account_id = ?", id, accID).First(&c).Error
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
+// FindByUUIDWithTx loads a contact by uuid scoped to the account using tx.
+func (r *ContactRepository) FindByUUIDWithTx(ctx context.Context, tx *gorm.DB, accID int64, uuid string) (*Contact, error) {
+	var c Contact
+	err := tx.WithContext(ctx).Where("account_id = ? AND uuid = ?", accID, uuid).First(&c).Error
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
 func (r *ContactRepository) FindByEmail(ctx context.Context, accId int64, email string) (*Contact, error) {
 	var contact Contact
 	err := r.DB.WithContext(ctx).Where("account_id = ? AND email_contact->>'email' = ?", accId, email).First(&contact).Error
@@ -110,7 +130,7 @@ func (r *ContactRepository) FindOrCreateByEmail(ctx context.Context, accId int64
 	if contact == nil {
 		contact = &Contact{
 			FirstName: contactPayload.FirstName,
-			LastName: contactPayload.LastName,
+			LastName:  contactPayload.LastName,
 			AccountID: accId,
 		}
 		emailContact := &emailcontact.EmailContact{
@@ -123,4 +143,36 @@ func (r *ContactRepository) FindOrCreateByEmail(ctx context.Context, accId int64
 		}
 	}
 	return contact, nil
+}
+
+// FindOrCreateByEmailWithTx finds or creates a contact + email_contact within tx (no nested transaction).
+func (r *ContactRepository) FindOrCreateByEmailWithTx(ctx context.Context, tx *gorm.DB, accID int64, p *ContactPayload) (*Contact, error) {
+	ec, err := r.emailContactRepo.FindByEmailWithTx(ctx, tx, accID, p.Email)
+	if err == nil {
+		var c Contact
+		if err := tx.WithContext(ctx).Where("id = ? AND account_id = ?", ec.ContactID, accID).First(&c).Error; err != nil {
+			return nil, err
+		}
+		return &c, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	c := &Contact{
+		FirstName: p.FirstName,
+		LastName:  p.LastName,
+		AccountID: accID,
+	}
+	if err := r.createContactRow(tx.WithContext(ctx), c); err != nil {
+		return nil, err
+	}
+	newEC := &emailcontact.EmailContact{
+		Email:     p.Email,
+		AccountID: accID,
+		ContactID: c.ID,
+	}
+	if err := tx.WithContext(ctx).Create(newEC).Error; err != nil {
+		return nil, err
+	}
+	return c, nil
 }

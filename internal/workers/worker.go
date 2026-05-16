@@ -1,5 +1,11 @@
 package workers
 
+import "time"
+
 type Worker interface {
-	Consume()
+	Run()
+	RetryCount() int
+	MaxRetries() int
+	QueueName() string
+	RetryDelay() time.Duration
 }

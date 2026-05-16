@@ -1,16 +1,22 @@
 package main
 
 import (
-	// "context"
 	"os"
+	"net"
 	"log"
+	"sync"
+	"time"
+	"syscall"
+	"context"
 	"net/http"
-
+	"os/signal"
+	"google.golang.org/grpc"
+	"github.com/joho/godotenv"
+	"github.com/go-chi/chi/v5"
 	"github.com/Nitish0007/go_notifier/initializer"
 	"github.com/Nitish0007/go_notifier/internal/common/router"
 	"github.com/Nitish0007/go_notifier/internal/common/database"
-	"github.com/go-chi/chi/v5"
-	"github.com/joho/godotenv"
+	"github.com/Nitish0007/go_notifier/internal/common/interceptors"
 )
 
 // For printing all registered routes - helpful in debugging
@@ -26,6 +32,11 @@ func PrintRoutes(r chi.Router) {
 }
 
 func main() {
+  ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	var wg sync.WaitGroup
+	
 	log.Println("\n\nStarting API Server...")
 	log.SetFlags(log.LstdFlags | log.Llongfile) // configuring logger to print filename and line number
 
@@ -56,12 +67,56 @@ func main() {
 	defer sqlDB.Close()
 
 	r := router.InitRouter()
-	// initializer.InititalizeApplication(db, r)
 	initializer.InitializeApplication(db, r)
 
+	httpServer := &http.Server{
+		Addr:    ":8080",
+		Handler: r,
+	}
+
+	listener, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		log.Fatalf("Failed to listen: %v", err)
+	}
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			interceptors.UnaryInterceptor,
+			interceptors.AuthUnaryInterceptor(db),
+		),
+	)
+	initializer.InitializeGRPCServer(db, grpcServer)
 	// PrintRoutes(r)
 
-	http.ListenAndServe(":8080", r)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		log.Println("HTTP server starting...")
+		httpServer.ListenAndServe()
+	}()
+	
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		log.Println("gRPC server starting...")
+		grpcServer.Serve(listener)
+	}()
+
+	<-ctx.Done()
+	log.Println("Shutdown signal received, shutting down servers...")
+
+	// HTTP shutdown requires a context with a timeout.
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := httpServer.Shutdown(shutdownCtx); err != nil {
+			log.Printf("HTTP shutdown error: %v", err)
+	}
+
+	// gRPC provides a built-in GracefulStop.
+	grpcServer.GracefulStop()
+
+	wg.Wait()
+	log.Println("Servers exited gracefully.")
 }
 
 // command to create migration

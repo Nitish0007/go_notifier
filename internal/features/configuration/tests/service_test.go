@@ -22,7 +22,7 @@ func TestConfigurationService_CreateAndList(t *testing.T) {
 
 	req := &configuration.CreateConfigurationRequest{}
 	req.Configuration.AccountID = acc.ID
-	req.Configuration.DefaultConfiguration = boolPtr(false)
+	req.Configuration.IsDefault = boolPtr(false)
 	req.Configuration.ConfigType = "smtp"
 	req.Configuration.ConfigurationData = map[string]any{
 		"host": "smtp.example.com", "port": float64(587),
@@ -48,7 +48,7 @@ func TestConfigurationService_UpdateConfiguration(t *testing.T) {
 
 	createReq := &configuration.CreateConfigurationRequest{}
 	createReq.Configuration.AccountID = acc.ID
-	createReq.Configuration.DefaultConfiguration = boolPtr(false)
+	createReq.Configuration.IsDefault = boolPtr(false)
 	createReq.Configuration.ConfigType = "smtp"
 	createReq.Configuration.ConfigurationData = map[string]any{
 		"host": "old.example.com", "port": float64(25),
@@ -62,7 +62,7 @@ func TestConfigurationService_UpdateConfiguration(t *testing.T) {
 	upd.Configuration.ID = created.ID
 	upd.Configuration.AccountID = acc.ID
 	upd.Configuration.ConfigType = "smtp"
-	upd.Configuration.DefaultConfiguration = boolPtr(false)
+	upd.Configuration.IsDefault = boolPtr(false)
 	upd.Configuration.ConfigurationData = map[string]any{
 		"host": "new.example.com", "port": float64(465),
 		"username": "u2", "password": "p2", "from": "from2@example.com",
@@ -71,7 +71,7 @@ func TestConfigurationService_UpdateConfiguration(t *testing.T) {
 	updated, err := svc.UpdateConfiguration(context.Background(), upd)
 	require.NoError(t, err)
 	require.Equal(t, created.ID, updated.ID)
-	require.Equal(t, "new.example.com", updated.ConfigurationData["host"])
+	require.Equal(t, "new.example.com", updated.Settings["host"])
 }
 
 func TestConfigurationService_DeleteConfiguration(t *testing.T) {
@@ -85,7 +85,7 @@ func TestConfigurationService_DeleteConfiguration(t *testing.T) {
 
 	createReq := &configuration.CreateConfigurationRequest{}
 	createReq.Configuration.AccountID = acc.ID
-	createReq.Configuration.DefaultConfiguration = boolPtr(false)
+	createReq.Configuration.IsDefault = boolPtr(false)
 	createReq.Configuration.ConfigType = "in_app"
 	createReq.Configuration.ConfigurationData = map[string]any{
 		"web_app_url": "https://app.example", "web_app_secret": "s", "web_app_token": "t",

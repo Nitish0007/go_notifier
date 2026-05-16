@@ -1,0 +1,8 @@
+version: v1
+plugins:
+  - name: go
+    out: ..
+    opt: module=github.com/Nitish0007/go_notifier
+  - name: go-grpc
+    out: ..
+    opt: module=github.com/Nitish0007/go_notifier

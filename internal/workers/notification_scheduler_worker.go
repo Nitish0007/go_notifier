@@ -1,15 +1,15 @@
-// This worker(polling worker) will pick notifications that have status pending and does not have a key in redis, which means the notification is not yet scheduled to be sent. This will run every minute and enqueue 500 notifications at a time to avoid overwhelming the queue.
 package workers
 
 import (
-	"context"
 	"log"
 	"time"
+	"context"
 
-	"github.com/Nitish0007/go_notifier/internal/features/emailnotification"
-	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
-	rbmq "github.com/rabbitmq/amqp091-go"
 	"gorm.io/gorm"
+	rbmq "github.com/rabbitmq/amqp091-go"
+	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
+	"github.com/Nitish0007/go_notifier/internal/features/emailnotification"
+	"github.com/Nitish0007/go_notifier/internal/features/emailnotificationlist"
 )
 
 var (
@@ -102,16 +102,19 @@ func (w *NotificationSchedulerWorker) pollNotifications() error {
 }
 
 func (w *NotificationSchedulerWorker) fetchNotifications() ([]*emailnotification.EmailNotification, error) {
-	repo := emailnotification.NewEmailNotificationRepository(w.dbConn)
-	filters := map[string]any{
-		// NOTE: this is the status of the notifications that are to be scheduled
-		// using Enqueued status for development purposes
-		"status": emailnotification.Draft,
-	}
+	listLinks := emailnotificationlist.NewEmailNotificationListRepository(w.dbConn)
+	repo := emailnotification.NewEmailNotificationRepository(w.dbConn, listLinks)
+	query := repo.DB.WithContext(w.ctx).Where(
+		"status = ? AND notification_type = ? AND send_at IS NOT NULL AND send_at <= ?",
+		emailnotification.Scheduled,
+		emailnotification.Campaign,
+		time.Now(),
+	).Limit(500)
 
 	// enqueue 500 notifications at a time to avoid overwhelming the queue
 	log.Printf("--- [Scheduler Worker]	Fetching notifications..........\n")
-	notifications, err := repo.GetNotificationsByObject(w.ctx, filters, 500)
+	var notifications []*emailnotification.EmailNotification
+	err := query.Find(&notifications).Error
 	if err != nil {
 		log.Printf("--- [Scheduler Worker]	Error Fetching notifications: %v\n", err)
 		return nil, err
@@ -122,7 +125,8 @@ func (w *NotificationSchedulerWorker) fetchNotifications() ([]*emailnotification
 }
 
 func (w *NotificationSchedulerWorker) pushNotificationsToDeliveryQueue(notifications []*emailnotification.EmailNotification) error {
-	repo := emailnotification.NewEmailNotificationRepository(w.dbConn)
+	listLinks := emailnotificationlist.NewEmailNotificationListRepository(w.dbConn)
+	repo := emailnotification.NewEmailNotificationRepository(w.dbConn, listLinks)
 	for _, n := range notifications {
 		// create job message
 		payload := map[string]any{"notificationID": n.ID, "accountID": n.AccountID}

@@ -12,3 +12,13 @@ type EmailNotificationList struct {
 	CreatedAt        time.Time `json:"created_at" gorm:"autoCreateTime" validate:"-"`
 	UpdatedAt        time.Time `json:"updated_at" gorm:"autoUpdateTime" validate:"-"`
 }
+
+func NewEmailNotificationList(account_id int64, list_id int64, notification_id int64) *EmailNotificationList {
+	return &EmailNotificationList{
+		AccountID: account_id,
+		ListID: list_id,
+		NotificationID: notification_id,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+}

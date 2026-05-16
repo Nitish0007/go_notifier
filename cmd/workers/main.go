@@ -8,7 +8,7 @@ import (
 
 	"github.com/Nitish0007/go_notifier/initializer"
 	"github.com/Nitish0007/go_notifier/internal/common/database"
-	rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
+	"github.com/Nitish0007/go_notifier/internal/common/rabbitmq"
 )
 
 func main() {
@@ -37,11 +37,12 @@ func main() {
 	}
 
 	// make RabbitMQ connection for workers
-	rbmqConn := rabbitmq_utils.ConnectMQ()
-	defer rbmqConn.Close()
+	rbmqClient, err := rabbitmq.NewRabbitMQClient()
+	if err != nil {
+		log.Fatalf("Failed to initialize RabbitMQ client: %v", err)
+	}
 
-	// create context for workers
 	ctx := context.Background()
 
-	initializer.InitializeWorkers(dbConn, rbmqConn, ctx)
+	initializer.InitializeWorkers(dbConn, rbmqClient, ctx)
 }

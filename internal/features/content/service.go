@@ -15,13 +15,14 @@ func NewContentService(contentRepository *ContentRepository) *ContentService {
 }
 
 func (s *ContentService) CreateContent(ctx context.Context, payload *CreateContentRequest) (*CreateContentResponse, error) {
-	content := NewContent(payload.Content.AccountID, payload.Content.Body)
+	content := NewContent(payload.Content.AccountID, payload.Content.Name, payload.Content.Body)
 	err := s.contentRepository.Create(ctx, content)
 	if err != nil {
 		return nil, err
 	}
 	return &CreateContentResponse{
 		ID: content.ID,
+		Name: content.Name,
 		AccountID: content.AccountID,
 		Body: content.Body,
 		CreatedAt: content.CreatedAt,

@@ -8,7 +8,7 @@ import (
 type CreateConfigurationRequest struct {
 	Configuration struct {
 		AccountID 						int64 `json:"account_id" validate:"required,gt=0"`
-		DefaultConfiguration 	*bool `json:"default_configuration" validate:"required"`
+		IsDefault 						*bool `json:"is_default" validate:"required"`
 		ConfigType 						string `json:"config_type" validate:"required,oneof=smtp in_app"`
 		ConfigurationData 		map[string]any `json:"configuration_data" validate:"required"`
 	} `json:"configuration" validate:"required"`
@@ -18,7 +18,7 @@ type UpdateConfigurationRequest struct {
 	Configuration struct {
 		ID 											int64 `json:"id" validate:"omitempty,gt=0"`
 		AccountID 							int64 `json:"account_id" validate:"omitempty,gt=0"`
-		DefaultConfiguration 		*bool `json:"default_configuration" validate:"omitempty,boolean"`
+		IsDefault 							*bool `json:"is_default" validate:"omitempty,boolean"`
 		ConfigType 							string `json:"config_type" validate:"omitempty,oneof=smtp in_app"`
 		ConfigurationData 			map[string]any `json:"configuration_data" validate:"omitempty"`
 	} `json:"configuration" validate:"required"`
@@ -27,7 +27,7 @@ type UpdateConfigurationRequest struct {
 type ConfigurationPayload struct {
 	ID 										int64 `json:"id" validate:"omitempty,gt=0"`
 	AccountID 						int64 `json:"account_id" validate:"required,gt=0"`
-	DefaultConfiguration 	*bool `json:"default_configuration" validate:"omitempty,boolean"`
+	IsDefault 						*bool `json:"is_default" validate:"omitempty,boolean"`
 	ConfigType 						string `json:"config_type" validate:"omitempty,oneof=smtp in_app"`
 	ConfigurationData 		map[string]any `json:"configuration_data" validate:"omitempty"`
 }
@@ -40,7 +40,7 @@ type ConfigurationRequest struct {
 type CreateConfigurationResponse struct {
 	ID 										int64 `json:"id"`
 	AccountID 						int64 `json:"account_id"`
-	DefaultConfiguration 	bool `json:"default_configuration"`
+	IsDefault 						bool `json:"is_default"`
 	ConfigType 						string `json:"config_type"`
 	ConfigurationData 		map[string]any `json:"configuration_data"`
 	CreatedAt 						time.Time `json:"created_at"`

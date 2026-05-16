@@ -1,16 +1,13 @@
 package emailnotification
 
 import (
-	// "log"
-	"time"
+	"context"
 	"errors"
 	"strings"
-	"context"
+	"time"
 
 	"github.com/Nitish0007/go_notifier/internal/shared/sharedhelper"
 	"github.com/Nitish0007/go_notifier/internal/shared/validators"
-	// "github.com/Nitish0007/go_notifier/internal/shared/dto"
-	// rabbitmq_utils "github.com/Nitish0007/go_notifier/utils/rabbitmq"
 )
 
 type EmailNotificationService struct {
@@ -31,41 +28,62 @@ func (s *EmailNotificationService) GetNotifications(ctx context.Context, accID i
 	return list, nil
 }
 
-func (s *EmailNotificationService) CreateEmailCampaign(ctx context.Context, payload *CreateEmailCampaignRequest) (*EmailNotification, error) {
-	notificationType, err := StringToEmailNotificationType(payload.Notification.NotificationType)
+func (s *EmailNotificationService) CreateEmailCampaign(ctx context.Context, payload *CreateEmailCampaignRequest) (*EmailCampaignResponse, error) {
+	typeStr := strings.TrimSpace(payload.Notification.NotificationType)
+	if typeStr == "" {
+		typeStr = "campaign"
+	}
+	notificationType, err := StringToEmailNotificationType(typeStr)
 	if err != nil {
 		return nil, err
 	}
-	notificationStatus, err := StringToEmailNotificationStatus(payload.Notification.Status)
-	if err != nil {
-		return nil, err
+	if notificationType != Campaign {
+		return nil, errors.New("invalid notification type: must be campaign")
 	}
 
-	send_at := sharedhelper.ParseTime(*payload.Notification.SendAt, time.RFC3339)
-	if notificationStatus == Scheduled {
-		if send_at == nil {
-			return nil, errors.New("send_at time is required for scheduled notifications")
+	statusStr := strings.ToLower(strings.TrimSpace(payload.Notification.Status))
+	var sendAt *time.Time
+	var dbStatus EmailNotificationStatus
+
+	switch statusStr {
+	case "scheduled":
+		if payload.Notification.SendAt == nil {
+			return nil, errors.New("send_at time is required for scheduling notifications")
 		}
-		if send_at.Before(*sharedhelper.GetCurrentTime()) {
+		t := sharedhelper.ParseTime(*payload.Notification.SendAt, time.RFC3339)
+		if t == nil {
+			return nil, errors.New("invalid send_at time format, should be in RFC3339 format")
+		}
+		if !t.After(*sharedhelper.GetCurrentTime()) {
 			return nil, errors.New("send_at time must be in the future")
 		}
-	}else if strings.ToLower(payload.Notification.Status) == "send_now" {
-		if send_at != nil {
-			return nil, errors.New("send_at time is not allowed for send_now notifications")
-		}
-		send_at = sharedhelper.GetCurrentTime()
-	}else{
-		send_at = nil
+		sendAt = t
+		dbStatus = Scheduled
+	case "send_now":
+		sendAt = sharedhelper.GetCurrentTime()
+		dbStatus = Scheduled
+	case "draft":
+		sendAt = nil
+		dbStatus = Draft
+	default:
+		return nil, errors.New("invalid status: must be draft, scheduled, or send_now")
+	}
+
+	if len(payload.Notification.ListIDs) == 0 {
+		return nil, errors.New("list_ids are required")
 	}
 
 	notification := NewEmailNotification(
-		payload.Notification.AccountID, 
-		payload.Notification.Subject, 
-		payload.Notification.Title, 
-		notificationType, 
+		payload.Notification.AccountID,
+		payload.Notification.Subject,
+		payload.Notification.Title,
+		notificationType,
 		payload.Notification.ContentID,
-		notificationStatus,
-		send_at,
+		dbStatus,
+		sendAt,
+		payload.Notification.FromName,
+		payload.Notification.FromEmail,
+		payload.Notification.ReplyToEmail,
 	)
 
 	validator := validators.NewModelValidator[EmailNotification]()
@@ -73,47 +91,77 @@ func (s *EmailNotificationService) CreateEmailCampaign(ctx context.Context, payl
 		return nil, err
 	}
 
-	if err := s.notificationRepo.Create(ctx, notification); err != nil {
+	if err := s.notificationRepo.CreateCampaignWithList(ctx, notification, payload.Notification.ListIDs); err != nil {
 		return nil, err
 	}
 
-	return notification, nil
+	return &EmailCampaignResponse{
+		ID: notification.ID,
+		AccountID: notification.AccountID,
+		Subject: notification.Subject,
+		Title: notification.Title,
+		FromName: notification.FromName,
+		FromEmail: notification.FromEmail,
+		ReplyToEmail: notification.ReplyToEmail,
+		ContentID: notification.ContentID,
+		ListIDs: payload.Notification.ListIDs,
+		NotificationType: string(notification.NotificationType),
+		Status: string(notification.Status),
+		SendAt: notification.SendAt,
+		SentAt: notification.SentAt,
+		CreatedAt: notification.CreatedAt,
+		// UpdatedAt: notification.UpdatedAt,
+	}, nil
 }
 
 func (s *EmailNotificationService) CreateEmailTransactionalCampaign(ctx context.Context, payload *CreateEmailTransactionalRequest) (*EmailNotification, error) {
-	notificationType, err := StringToEmailNotificationType(payload.Notification.NotificationType)
+	typeStr := strings.TrimSpace(payload.Notification.NotificationType)
+	if typeStr == "" {
+		typeStr = "transactional"
+	}
+	notificationType, err := StringToEmailNotificationType(typeStr)
+	if err != nil {
+		return nil, err
+	}
+	if notificationType != Transactional {
+		return nil, errors.New("transactional creation requires notification_type transactional")
+	}
+
+	statusStr := strings.TrimSpace(payload.Notification.Status)
+	if statusStr == "" {
+		statusStr = "trans"
+	}
+	notificationStatus, err := StringToEmailNotificationStatus(statusStr)
 	if err != nil {
 		return nil, err
 	}
 
-	notificationStatus, err := StringToEmailNotificationStatus(payload.Notification.Status)
-	if err != nil {
-		return nil, err
-	}
-
-	trans_notif := NewEmailNotification(
-		payload.Notification.AccountID, 
-		payload.Notification.Subject, 
-		payload.Notification.Title, 
-		notificationType, 
+	transNotif := NewEmailNotification(
+		payload.Notification.AccountID,
+		payload.Notification.Subject,
+		payload.Notification.Title,
+		notificationType,
 		payload.Notification.ContentID,
 		notificationStatus,
-		nil, // send_at should be nil for transactional notifications
+		nil, // send_at is nil for transactional notifications
+		payload.Notification.FromName,
+		payload.Notification.FromEmail,
+		payload.Notification.ReplyToEmail,
 	)
 
 	validator := validators.NewModelValidator[EmailNotification]()
-	if err := validator.ValidateStruct(trans_notif); err != nil {
+	if err := validator.ValidateStruct(transNotif); err != nil {
 		return nil, err
 	}
 
-	if err := s.notificationRepo.Create(ctx, trans_notif); err != nil {
+	if err := s.notificationRepo.Create(ctx, transNotif); err != nil {
 		return nil, err
 	}
 
- 	return trans_notif, nil
+	return transNotif, nil
 }
 
-func (s *EmailNotificationService) GetNotificationById(ctx context.Context, nID string, accID int) (*EmailNotification, error) {
+func (s *EmailNotificationService) GetNotificationById(ctx context.Context, nID int64, accID int64) (*EmailNotification, error) {
 	n, err := s.notificationRepo.GetByID(ctx, nID, accID)
 	if err != nil {
 		return nil, err
@@ -123,7 +171,7 @@ func (s *EmailNotificationService) GetNotificationById(ctx context.Context, nID 
 
 // func (s *EmailNotificationService) SendOrScheduleNotification(ctx context.Context, n *EmailNotification) error {
 // 	// if notification is meant to sent straight away or if its scheduled for next 10 mins then simply push it to queue
-// 	if n.Status == Pending && (n.SendAt.Before(time.Now()) || n.SendAt.After(time.Now().Add(10*time.Minute))) {
+// 	if n.Status == Trans && (n.SendAt.Before(time.Now()) || n.SendAt.After(time.Now().Add(10*time.Minute))) {
 // 		// push in queue
 // 		body := map[string]any{
 // 			"notificationID": n.ID,
