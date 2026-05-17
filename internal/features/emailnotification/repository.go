@@ -110,3 +110,21 @@ func (r *EmailNotificationRepository) UpdateNotification(ctx context.Context, fi
 
 	return &udpatedNotification, nil
 }
+
+func (r *EmailNotificationRepository) ListCampaignRecipients(ctx context.Context, accountID, notificationID int64) ([]CampaignRecipient, error) {
+	var rows []CampaignRecipient
+	err := r.DB.WithContext(ctx).Raw(`
+		SELECT DISTINCT ec.email,
+			COALESCE(c.first_name, '') AS first_name,
+			COALESCE(c.last_name, '') AS last_name
+		FROM email_notification_lists enl
+		INNER JOIN list_subscriptions ls
+			ON ls.list_id = enl.list_id AND ls.account_id = enl.account_id AND ls.active = true
+		INNER JOIN contacts c
+			ON c.id = ls.contact_id AND c.account_id = ls.account_id
+		INNER JOIN email_contacts ec
+			ON ec.contact_id = c.id AND ec.account_id = c.account_id
+		WHERE enl.notification_id = ? AND enl.account_id = ?
+	`, notificationID, accountID).Scan(&rows).Error
+	return rows, err
+}

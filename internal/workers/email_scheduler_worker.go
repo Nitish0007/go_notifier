@@ -28,7 +28,7 @@ func NewEmailSchedulerWorker(ctx context.Context, db *gorm.DB, mqClient mq.MQCli
 
 func (w *EmailSchedulerWorker) RetryCount() int { return 0 }
 func (w *EmailSchedulerWorker) MaxRetries() int { return 0 }
-func (w *EmailSchedulerWorker) QueueName() string { return "email_scheduler_queue" }
+func (w *EmailSchedulerWorker) QueueName() string { return "email_delivery" }
 func (w *EmailSchedulerWorker) RetryDelay() time.Duration {	return 1 * time.Minute }
 func (w *EmailSchedulerWorker) pollInterval() time.Duration { return 1 * time.Minute }
 
