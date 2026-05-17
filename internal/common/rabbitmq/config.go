@@ -10,49 +10,37 @@ import (
 
 const rabbitmqConfigPath = "configs/rabbitmq/rabbitmq.yml"
 
-type envConfig struct {
-	Development struct {
-		DynamicQueue bool `yaml:"dynamic_queue"`
-		Queues []string `yaml:"queues"`
-	}
-	Test struct {
-		DynamicQueue bool `yaml:"dynamic_queue"`
-		Queues []string `yaml:"queues"`
-	}
-	Production struct {
-		DynamicQueue bool `yaml:"dynamic_queue"`
-		Queues []string `yaml:"queues"`
-	}
+type envBlock struct {
+	DynamicQueue bool     `yaml:"dynamic_queue"`
+	Queues       []string `yaml:"queues"`
 }
 
 func InitializeQueues(mqClient mq.MQClient) ([]string, error) {
 	env := os.Getenv("ENV")
-	envConfig := make(map[string]envConfig)
+	var configs map[string]envBlock
 	yamlFile, err := os.ReadFile(rabbitmqConfigPath)
 	if err != nil {
 		return nil, err
 	}
-	err = yaml.Unmarshal(yamlFile, &envConfig)
+	err = yaml.Unmarshal(yamlFile, &configs)
 	if err != nil {
 		return nil, err
 	}
 
-	switch env {
-	case "development", "test", "production":
-		if envConfig[env].Development.DynamicQueue == true {
-			return []string{}, nil
-		}
-		queues := envConfig[env].Development.Queues
-		for _, queue := range queues {
-			err := CreateQueue(mqClient, queue)
-			if err != nil {
-				return nil, err
-			}
-		}
-		return queues, nil
+	block, ok := configs[env]
+	if !ok {
+		return nil, errors.New("invalid environment")
 	}
 
-	return nil, errors.New("invalid environment")
+	
+	queues := block.Queues
+	for _, queue := range queues {
+		err := CreateQueue(mqClient, queue)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return block.Queues, nil
 }
 
 func CreateQueue(rbmqClient mq.MQClient, queue_name string) error {

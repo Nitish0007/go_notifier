@@ -157,7 +157,6 @@ func (n *EmailNotification) ResponseMap() (map[string]any, error) {
 	}, nil
 }
 
-// Implement NotificationView (getter names avoid conflict with struct fields).
 func (n *EmailNotification) GetSubject() string                         { return n.Subject }
 func (n *EmailNotification) GetTitle() string                           { return n.Title }
 func (n *EmailNotification) GetNotificationType() EmailNotificationType { return n.NotificationType }

@@ -9,18 +9,18 @@ import (
 	"gorm.io/gorm"
 	"google.golang.org/grpc"
 	"github.com/go-chi/chi/v5"
-	"github.com/Nitish0007/go_notifier/initializer/container"
-	"github.com/Nitish0007/go_notifier/internal/features/account"
-	"github.com/Nitish0007/go_notifier/internal/features/emailnotification"
-	"github.com/Nitish0007/go_notifier/internal/features/content"
-	"github.com/Nitish0007/go_notifier/internal/features/list"
-	"github.com/Nitish0007/go_notifier/internal/features/contact"
-	"github.com/Nitish0007/go_notifier/internal/features/configuration"
-	"github.com/Nitish0007/go_notifier/internal/common/middlewares"
-	"github.com/Nitish0007/go_notifier/internal/common/mq"
 	"github.com/Nitish0007/go_notifier/internal/workers"
-	accountv1 "github.com/Nitish0007/go_notifier/pkg/gen/account/v1"
+	"github.com/Nitish0007/go_notifier/internal/common/mq"
+	"github.com/Nitish0007/go_notifier/initializer/container"
+	"github.com/Nitish0007/go_notifier/internal/features/list"
 	"github.com/Nitish0007/go_notifier/internal/common/rabbitmq"
+	"github.com/Nitish0007/go_notifier/internal/features/account"
+	"github.com/Nitish0007/go_notifier/internal/features/content"
+	"github.com/Nitish0007/go_notifier/internal/features/contact"
+	"github.com/Nitish0007/go_notifier/internal/common/middlewares"
+	accountv1 "github.com/Nitish0007/go_notifier/pkg/gen/account/v1"
+	"github.com/Nitish0007/go_notifier/internal/features/configuration"
+	"github.com/Nitish0007/go_notifier/internal/features/emailnotification"
 )
 
 func InitializeApplication(db *gorm.DB, router *chi.Mux) {
@@ -56,15 +56,16 @@ func InitializeWorkers(db *gorm.DB, mqClient mq.MQClient, ctx context.Context) {
 	c := container.NewContainer(db)
 
 	// initialize queues
-	_, err := rabbitmq.InitializeQueues(mqClient)
+	queues, err := rabbitmq.InitializeQueues(mqClient)
 	if err != nil {
 		log.Fatalf("Failed to initialize queues: %v", err)
 	}
+	log.Printf("RabbitMQ queues declared successfully: %v", queues)
 
 	// Initialize workers by injecting dependencies
 	emailSchedulerWorker := workers.NewEmailSchedulerWorker(ctx, db, mqClient)
 	// schedulerWorker := workers.NewNotificationSchedulerWorker(db, mqClient, ctx, c.EmailNotificationService)
-	emailWorker := workers.NewEmailWorker(db, mqClient, ctx, c.EmailNotificationService)
+	emailWorker := workers.NewEmailWorker(mqClient, ctx, c.CampaignDeliverer)
 	// notificationBatchWorker := workers.NewNotificationBatchWorker(db, rbmqConn, ctx, c.NotificationService)
 
 

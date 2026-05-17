@@ -49,9 +49,10 @@ services:
             rabbitmq-plugins enable rabbitmq_shovel_management &&
             rabbitmq-server"
     healthcheck:
-      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"]
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_port_connectivity -p 5672"]
       interval: 5s
-      retries: 5
+      retries: 10
+      start_period: 60s
     networks:
       - notifier_network
 

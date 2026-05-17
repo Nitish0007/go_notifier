@@ -3,6 +3,7 @@ package container
 import (
 	"gorm.io/gorm"
 
+	"github.com/Nitish0007/go_notifier/internal/app/delivery"
 	"github.com/Nitish0007/go_notifier/internal/features/account"
 	"github.com/Nitish0007/go_notifier/internal/features/apiKey"
 	"github.com/Nitish0007/go_notifier/internal/features/configuration"
@@ -13,14 +14,11 @@ import (
 	"github.com/Nitish0007/go_notifier/internal/features/emailnotificationlist"
 	"github.com/Nitish0007/go_notifier/internal/features/list"
 	"github.com/Nitish0007/go_notifier/internal/features/listsubscription"
-	// "github.com/Nitish0007/go_notifier/internal/lib/notifier"
-	// notifierInterface "github.com/Nitish0007/go_notifier/internal/shared/interfaces/notifier"
+	libnotifier "github.com/Nitish0007/go_notifier/internal/lib/notifier"
 )
 
 type Container struct {
 	DB *gorm.DB
-	// NOTE: keep in mind that dependencies should be intialized first
-	// repositories are the lowest level of dependencies and should be intialized first
 
 	// Repositories
 	ApiKeyRepository                *apiKey.ApiKeyRepository
@@ -34,8 +32,11 @@ type Container struct {
 	ListSubscriptionRepository      *listsubscription.ListSubscriptionRepository
 	ListRepository                  *list.ListRepository
 
-	// Notifiers
-	// Notifiers []notifierInterface.Notifier
+	// Notifier registry (Strategy per channel)
+	NotifierRegistry *libnotifier.Registry
+
+	// Delivery orchestrators
+	CampaignDeliverer *delivery.CampaignDeliverer
 
 	// Services
 	AccountService           *account.AccountService
@@ -58,26 +59,34 @@ func NewContainer(db *gorm.DB) *Container {
 	c := &Container{DB: db}
 
 	c.InitializeRepositories()
-	// c.InitializeNotifiers()
+	c.InitializeNotifiers()
+	c.InitializeDelivery()
 	c.InitializeServices()
 	c.InitializeHandlers()
 	return c
 }
 
-// func (c *Container) InitializeNotifiers() {
-// 	c.Notifiers = []notifierInterface.Notifier{
-// 		notifier.NewEmailNotifier(c.EmailNotificationRepository),
-// 	}
-// }
+func (c *Container) InitializeNotifiers() {
+	c.NotifierRegistry = libnotifier.NewRegistry()
+	c.NotifierRegistry.Register(libnotifier.NewEmailNotifier())
+}
+
+func (c *Container) InitializeDelivery() {
+	c.CampaignDeliverer = delivery.NewCampaignDeliverer(
+		c.EmailNotificationRepository,
+		c.ConentRepository,
+		c.ConfigurationRepository,
+		c.NotifierRegistry,
+	)
+}
 
 func (c *Container) InitializeRepositories() {
-	// intialize shared repositories first
 	c.ApiKeyRepository = apiKey.NewApiKeyRepository(c.DB)
 
 	c.AccountRepository               = account.NewAccountRepository(c.DB, c.ApiKeyRepository)
 	c.ConfigurationRepository         = configuration.NewConfigurationRepository(c.DB)
-	c.ContactRepository               = contact.NewContactRepository(c.DB, c.EmailContactRepository)
 	c.EmailContactRepository          = emailcontact.NewEmailContactRepository(c.DB)
+	c.ContactRepository               = contact.NewContactRepository(c.DB, c.EmailContactRepository)
 	c.EmailNotificationListRepository = emailnotificationlist.NewEmailNotificationListRepository(c.DB)
 	c.EmailNotificationRepository     = emailnotification.NewEmailNotificationRepository(c.DB, c.EmailNotificationListRepository)
 	c.ListSubscriptionRepository      = listsubscription.NewListSubscriptionRepository(c.DB)

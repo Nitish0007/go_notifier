@@ -65,3 +65,11 @@ type EmailCampaignResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 	// UpdatedAt time.Time `json:"updated_at"`
 }
+
+type CampaignRecipient struct {
+	ContactID int64  `json:"contact_id"`
+	AccountID int64  `json:"account_id"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+}

@@ -1,14 +1,9 @@
 package notifier
 
-import (
-	"context"
+import "context"
 
-	"github.com/Nitish0007/go_notifier/internal/shared/dto"
-)
-
+// Notifier sends a message on one channel (Strategy).
 type Notifier interface {
-	Notify(notification NotificationView, smtpConfig *dto.SMTPConfiguration) error
-	ChannelType() string
-	CreateNotification(ctx context.Context, payload map[string]any) (NotificationView, error)
-	// CreateBulkNotifications(ctx context.Context, payload []map[string]any) ([]NotificationView, error)
+	Channel() Channel
+	Notify(ctx context.Context, req DeliveryRequest, cfg ProviderConfig) error
 }
