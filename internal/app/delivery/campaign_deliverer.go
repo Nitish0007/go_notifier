@@ -1,16 +1,17 @@
 package delivery
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"time"
+	"context"
+	"encoding/json"
 
-	"github.com/Nitish0007/go_notifier/internal/features/configuration"
-	"github.com/Nitish0007/go_notifier/internal/features/content"
-	"github.com/Nitish0007/go_notifier/internal/features/emailnotification"
-	libnotifier "github.com/Nitish0007/go_notifier/internal/lib/notifier"
+	"github.com/flosch/pongo2/v7"
 	"github.com/Nitish0007/go_notifier/internal/shared/dto"
+	"github.com/Nitish0007/go_notifier/internal/features/content"
+	"github.com/Nitish0007/go_notifier/internal/features/configuration"
+	libnotifier "github.com/Nitish0007/go_notifier/internal/lib/notifier"
+	"github.com/Nitish0007/go_notifier/internal/features/emailnotification"
 	notifierif "github.com/Nitish0007/go_notifier/internal/shared/interfaces/notifier"
 )
 
@@ -64,8 +65,33 @@ func (d *CampaignDeliverer) Deliver(ctx context.Context, notificationID, account
 	}
 
 	for _, rcpt := range recipients {
-		req := toDeliveryRequest(n, rcpt, c.Body)
-		if err := d.registry.Notify(ctx, notifierif.ChannelEmail, req, providerCfg); err != nil {
+		// parse the body as a pongo2 template
+		tmpl, err := pongo2.FromString(c.Body)
+		if err != nil {
+			return fmt.Errorf("failed parsing pongo2 template: %w", err)
+		}
+
+		// convert the rcpt to a json string and unmarshal it into a map[string]any
+		tmplContext := map[string]any{
+			"contact": map[string]any{
+				"first_name": rcpt.FirstName,
+				"last_name": rcpt.LastName,
+				"email": rcpt.Email,
+				"contact_uuid": rcpt.ContactUUID,
+				"contact_id": rcpt.ContactID,
+				"account_id": rcpt.AccountID,
+			},
+		}
+
+		// execute the template with the context
+		body, err := tmpl.Execute(pongo2.Context(tmplContext))
+		if err != nil {
+			return fmt.Errorf("failed executing pongo2 template: %w", err)
+		}
+
+		// create the delivery request
+		req := toDeliveryRequest(n, rcpt, body)
+		if err := d.registry.Notify(ctx, notifierif.ChannelEmail, *req, providerCfg); err != nil {
 			return fmt.Errorf("send to %s: %w", rcpt.Email, err)
 		}
 	}
@@ -114,7 +140,7 @@ func (d *CampaignDeliverer) loadSMTPConfig(ctx context.Context, accountID int64,
 	}, nil
 }
 
-func toDeliveryRequest(n *emailnotification.EmailNotification, rcpt emailnotification.CampaignRecipient, body string) notifierif.DeliveryRequest {
+func toDeliveryRequest(n *emailnotification.EmailNotification, rcpt *emailnotification.CampaignRecipient, body string) *notifierif.DeliveryRequest {
 	toName := rcpt.FirstName
 	if rcpt.LastName != "" {
 		if toName != "" {
@@ -132,12 +158,11 @@ func toDeliveryRequest(n *emailnotification.EmailNotification, rcpt emailnotific
 		replyTo = from
 	}
 
-	return notifierif.DeliveryRequest{
+	return &notifierif.DeliveryRequest{
 		AccountID: n.AccountID,
 		Recipient: rcpt.Email,
 		Subject:   n.Subject,
 		Body:      body,
-		HTMLBody:  body,
 		Metadata: map[string]string{
 			"from_email":     from,
 			"from_name":      n.FromName,

@@ -67,9 +67,10 @@ type EmailCampaignResponse struct {
 }
 
 type CampaignRecipient struct {
-	ContactID int64  `json:"contact_id"`
-	AccountID int64  `json:"account_id"`
-	Email     string `json:"email"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
+	ContactID int64     `json:"contact_id"`
+	AccountID int64     `json:"account_id"`
+	Email     string    `json:"email"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	ContactUUID string  `json:"contact_uuid"`
 }

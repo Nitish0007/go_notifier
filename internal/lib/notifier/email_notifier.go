@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/smtp"
 
-	"github.com/google/uuid"
+	// "github.com/google/uuid"
 
 	"github.com/Nitish0007/go_notifier/internal/shared/dto"
 	notifierif "github.com/Nitish0007/go_notifier/internal/shared/interfaces/notifier"
@@ -41,17 +41,14 @@ func (n *EmailNotifier) Notify(ctx context.Context, req notifierif.DeliveryReque
 	replyToEmail := req.Metadata["reply_to_email"]
 	replyToName := req.Metadata["reply_to_name"]
 
-	htmlBody := req.HTMLBody
-	if htmlBody == "" {
-		htmlBody = req.Body
-	}
+	body := req.Body
 
-	return sendSMTP(req.Recipient, from, fromName, toName, replyToEmail, replyToName, req.Subject, req.Body, htmlBody, smtpCfg)
+	return sendSMTP(req.Recipient, from, fromName, toName, replyToEmail, replyToName, req.Subject, body, smtpCfg)
 }
 
-func sendSMTP(to, from, fromName, toName, replyToEmail, replyToName, subject, body, htmlBody string, smtpConfig *dto.SMTPConfiguration) error {
+func sendSMTP(to, from, fromName, toName, replyToEmail, replyToName, subject, body string, smtpConfig *dto.SMTPConfiguration) error {
 	auth := smtp.PlainAuth("", smtpConfig.Username, smtpConfig.Password, smtpConfig.Host)
-	message := buildEmailMessage(to, from, fromName, toName, replyToEmail, replyToName, subject, body, htmlBody)
+	message := buildEmailMessage(to, from, fromName, toName, replyToEmail, replyToName, subject, body)
 
 	addr := fmt.Sprintf("%s:%d", smtpConfig.Host, smtpConfig.Port)
 	client, err := smtp.Dial(addr)
@@ -59,10 +56,16 @@ func sendSMTP(to, from, fromName, toName, replyToEmail, replyToName, subject, bo
 		log.Printf("smtp dial: %v", err)
 		return err
 	}
+	quitChan := false
 	defer func() {
+		if quitChan {
+			return
+		}
+
 		if err := client.Close(); err != nil {
 			log.Printf("smtp close: %v", err)
 		}
+		quitChan = true
 	}()
 
 	tlsConfig := &tls.Config{
@@ -98,10 +101,11 @@ func sendSMTP(to, from, fromName, toName, replyToEmail, replyToName, subject, bo
 	if err = client.Quit(); err != nil {
 		log.Printf("smtp quit: %v", err)
 	}
+	quitChan = true
 	return nil
 }
 
-func buildEmailMessage(to, from, fromName, toName, replyToEmail, replyToName, subject, body, htmlBody string) []byte {
+func buildEmailMessage(to, from, fromName, toName, replyToEmail, replyToName, subject, body string) []byte {
 	message := bytes.NewBuffer(nil)
 	message.WriteString(fmt.Sprintf("From: %s <%s>\r\n", fromName, from))
 	message.WriteString(fmt.Sprintf("To: %s <%s>\r\n", toName, to))
@@ -114,19 +118,7 @@ func buildEmailMessage(to, from, fromName, toName, replyToEmail, replyToName, su
 	}
 	message.WriteString("\r\n")
 
-	if htmlBody != "" {
-		boundary := uuid.New().String()
-		message.WriteString(fmt.Sprintf("Content-Type: multipart/alternative;\r\n boundary=\"%s\"\r\n\r\n", boundary))
-		message.WriteString(fmt.Sprintf("--%s\r\n", boundary))
-		message.WriteString("Content-Type: text/plain; charset=UTF-8\r\n\r\n")
-		message.WriteString(body)
-		message.WriteString(fmt.Sprintf("\r\n--%s\r\n", boundary))
-		message.WriteString("Content-Type: text/html; charset=UTF-8\r\n\r\n")
-		message.WriteString(htmlBody)
-		message.WriteString(fmt.Sprintf("\r\n--%s--\r\n", boundary))
-	} else {
-		message.WriteString("Content-Type: text/html; charset=UTF-8\r\n\r\n")
-		message.WriteString(body)
-	}
+	message.WriteString("Content-Type: text/html; charset=UTF-8\r\n\r\n")
+	message.WriteString(body)
 	return message.Bytes()
 }

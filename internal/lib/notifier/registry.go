@@ -1,8 +1,8 @@
 package notifier
 
 import (
-	"context"
 	"fmt"
+	"context"
 
 	notifierif "github.com/Nitish0007/go_notifier/internal/shared/interfaces/notifier"
 )
