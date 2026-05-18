@@ -6,6 +6,5 @@ type DeliveryRequest struct {
 	Recipient string
 	Subject   string
 	Body      string
-	HTMLBody  string
 	Metadata  map[string]string
 }

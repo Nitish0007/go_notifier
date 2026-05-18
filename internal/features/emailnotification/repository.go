@@ -111,12 +111,15 @@ func (r *EmailNotificationRepository) UpdateNotification(ctx context.Context, fi
 	return &udpatedNotification, nil
 }
 
-func (r *EmailNotificationRepository) ListCampaignRecipients(ctx context.Context, accountID, notificationID int64) ([]CampaignRecipient, error) {
-	var rows []CampaignRecipient
+func (r *EmailNotificationRepository) ListCampaignRecipients(ctx context.Context, accountID, notificationID int64) ([]*CampaignRecipient, error) {
+	var rows []*CampaignRecipient
 	err := r.DB.WithContext(ctx).Raw(`
-		SELECT DISTINCT ec.email,
+		SELECT DISTINCT 
+			ec.email as email,
 			COALESCE(c.first_name, '') AS first_name,
-			COALESCE(c.last_name, '') AS last_name
+			COALESCE(c.last_name, '') AS last_name,
+			c.uuid AS contact_uuid,
+			c.id AS contact_id
 		FROM email_notification_lists enl
 		INNER JOIN list_subscriptions ls
 			ON ls.list_id = enl.list_id AND ls.account_id = enl.account_id AND ls.active = true
