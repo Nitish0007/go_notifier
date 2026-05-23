@@ -203,6 +203,11 @@ func getDBConfigs(env string) dbConfig {
 }
 
 func getDSN(env string) string {
+	dbURL := os.Getenv("DB_URL")
+	if dbURL != "" {
+		return dbURL
+	}
+	
 	dbconf := getDBConfigs(env)
 	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=UTC",
 		dbconf.Host,

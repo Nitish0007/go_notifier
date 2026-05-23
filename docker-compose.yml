@@ -1,31 +1,35 @@
 services:
   notifier_db:
-    image: postgres:17
+    image: postgres:18-alpine
     platform: linux/amd64
     networks:
       - notifier_network
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: notifier_prod_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      DB_URL: ${DB_URL}
+    volumes:
+      - postgres_data:/var/lib/postgresql
     healthcheck: # Wait for db_service to start, before making connection with db
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-notifier_db}"]
       interval: 5s
       retries: 5
+    restart: unless-stopped
 
   notifier_redis:
     image: redis:8.4-alpine
     platform: linux/amd64
     networks:
       - notifier_network
-    ports: 
-      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      retries: 5
+    restart: unless-stopped
   
   notifier_rbmq:
     networks:
@@ -37,93 +41,98 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+      - "15692:15692"
     environment:
-      RABBITMQ_DEFAULT_USER: user
-      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
     volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
       - ./configs/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
-    command: >
-      sh -c "rabbitmq-plugins enable rabbitmq_management && 
-            rabbitmq-plugins enable rabbitmq_delayed_message_exchange &&
-            rabbitmq-plugins enable rabbitmq_consistent_hash_exchange &&
-            rabbitmq-plugins enable rabbitmq_prometheus &&
-            rabbitmq-plugins enable rabbitmq_shovel &&
-            rabbitmq-plugins enable rabbitmq_shovel_management &&
-            rabbitmq-server"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
-  notifier_migrate: # its a one-time run container, and should be exited with code 0 for successful executions of migrations
-    image: migrate/migrate # official image provided by golang-migrate maintainers
+  notifier_migrate:
+    image: notifier-migrate:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
     networks:
       - notifier_network
-    volumes:
-      - ./db/migrations:/migrations
     environment:
-      DATABASE_URL: postgres://postgres:12345678@notifier_db:5432/notifier_dev_db?sslmode=disable
+      DATABASE_URL: ${DB_URL}
     command:
       [
         "-path", "/migrations",
-        "-database", "postgres://postgres:12345678@notifier_db:5432/notifier_dev_db?sslmode=disable",
+        "-database", "${DB_URL}",
         "up"
       ]
     depends_on:
       notifier_db:
         condition: service_healthy
+    restart: "no"
 
   notifier-api:
     platform: linux/amd64
-    # image: go-notifier-api:latest
+    image: notifier-api:latest
     build:
       context: .
       dockerfile: Dockerfile
+      target: api
     networks:
       - notifier_network
     ports:
       - "8080:8080"
-    volumes:
-      # - .:/app # line is commented out to avoid mounting the current directory and avoiding replacement of the built main file
-      - ./configs:/app/configs
-      - postgres_data:/var/lib/postgresql/data
-      - redis_data:/data
     environment:
       ENV: production
-    command: ['./server']
+      DB_URL: ${DB_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      REDIS_URL: ${REDIS_URL}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     depends_on:
       notifier_db:
         condition: service_healthy # wait for health check
       notifier_redis:
         condition: service_started
       notifier_rbmq:
-        condition: service_started
+        condition: service_healthy
+    restart: unless-stopped
 
   notifier-workers:
     platform: linux/amd64
-    # image: go-notifier-workers:latest
+    image: notifier-workers:latest
     build:
       context: .
       dockerfile: Dockerfile
-    command: ['./workers']
+      target: workers
     networks:
       - notifier_network
-    volumes:
-      # - .:/app # line is commented out to avoid mounting the current directory and avoiding replacement of the built main file
-      - ./configs:/app/configs
-      - postgres_data:/var/lib/postgresql/data
-      - redis_data:/data
     environment:
       ENV: production
+      DB_URL: ${DB_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      REDIS_URL: ${REDIS_URL}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     depends_on:
       notifier_db:
         condition: service_healthy # wait for health check
       notifier_redis:
-        condition: service_started
-      notifier-api:
-        condition: service_started
+        condition: service_healthy
       notifier_rbmq:
-        condition: service_started
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   postgres_data:
   redis_data:
+  rabbitmq_data:
 
 networks:
   notifier_network:

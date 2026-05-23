@@ -38,16 +38,10 @@ services:
       - "15672:15672" # management UI endpoint
       - "15692:15692"  # Prometheus metrics endpoint
     environment:
-      RABBITMQ_DEFAULT_USER: user
-      RABBITMQ_DEFAULT_PASS: password
-    command: >
-      sh -c "rabbitmq-plugins enable rabbitmq_management && 
-            rabbitmq-plugins enable rabbitmq_delayed_message_exchange &&
-            rabbitmq-plugins enable rabbitmq_consistent_hash_exchange &&
-            rabbitmq-plugins enable rabbitmq_prometheus &&
-            rabbitmq-plugins enable rabbitmq_shovel &&
-            rabbitmq-plugins enable rabbitmq_shovel_management &&
-            rabbitmq-server"
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_port_connectivity -p 5672"]
       interval: 5s
@@ -55,25 +49,42 @@ services:
       start_period: 60s
     networks:
       - notifier_network
+    restart: unless-stopped
 
-  notifier_migrate: # its a one-time run container, and should be exited with code 0 for successful executions of migrations
-    image: migrate/migrate # official image provided by golang-migrate maintainers
-    env_file:
-      - .env.development # .env for production environment
+  # notifier_migrate: # its a one-time run container, and should be exited with code 0 for successful executions of migrations
+  #   image: migrate/migrate # official image provided by golang-migrate maintainers
+  #   env_file:
+  #     - .env.development # .env for production environment
+  #   volumes:
+  #     - ./db/migrations:/migrations
+  #     - ./scripts/run_migrations.sh:/run_migrations.sh
+  #   entrypoint: ["bin/sh"]
+  #   command: ["/run_migrations.sh"]
+  #   depends_on:
+  #     notifier_db:
+  #       condition: service_healthy
+  #   networks:
+  #     - notifier_network
+
+  notifier_migrate:
+    build: 
+      context: .
+      dockerfile: Dockerfile.migrate
+    networks:
+      - notifier_network
     volumes:
       - ./db/migrations:/migrations
-      - ./scripts/run_migrations.sh:/run_migrations.sh
-    entrypoint: ["bin/sh"]
-    command: ["/run_migrations.sh"]
+    env_file:
+      - .env.development
+    entrypoint: ["/bin/sh", "-c"]
+    command: ['migrate -path /migrations -database "$$DB_URL" up']
     depends_on:
       notifier_db:
         condition: service_healthy
-    networks:
-      - notifier_network
+    restart: "no"
 
   notifier-api:
     platform: linux/amd64
-    # image: go-notifier-api:latest
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -92,10 +103,6 @@ services:
       [
         "go", "run", "./cmd/server/main.go"
       ]
-      # to run already build binary 
-      # [
-      #   "./server"
-      # ]
     depends_on:
       notifier_db:
         condition: service_healthy # wait for health check
@@ -108,7 +115,6 @@ services:
 
   notifier-workers:
     platform: linux/amd64
-    # image: go-notifier-workers:latest # require docker login to pull the image
     build:
       context: .
       dockerfile: Dockerfile.dev
@@ -132,10 +138,6 @@ services:
       [
         "go", "run", "./cmd/workers/main.go"
       ]
-      # to run already build binary 
-      # [
-      #   "./workers"
-      # ]
     networks:
       - notifier_network
 
@@ -173,6 +175,7 @@ services:
 volumes:
   notifier_db_data:
   notifier_redis_data:
+  rabbitmq_data:
   # prometheus_data:
   # grafana_data:
 networks:

@@ -11,7 +11,7 @@ production:
   adapter: postgresql
   encoding: unicode
   username: postgres
-  database: notifier_prod_db
+  database: notifier_db
   host: notifier_db
   port: 5432
   password: 12345678

@@ -1,0 +1,11 @@
+.git
+tmp
+node_modules
+dist
+bin
+.env*
+.DS_Store
+.airconfig.toml
+docker-compose.*.yml
+README.md
+Dockerfile*
