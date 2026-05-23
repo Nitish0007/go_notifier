@@ -197,12 +197,39 @@ func (r *RabbitMQClient) publishBytes(ctx context.Context, queue string, body []
 }
 
 
-
+const (
+	dialMaxAttempts = 15
+	dialInterval    = 2 * time.Second
+)
 var rabbitMQ *RabbitMQClient
 var clientMutex  sync.Mutex
 
 func GetRabbitMQURI() string {
 	return os.Getenv("RABBITMQ_URL")
+}
+
+
+func dialRabbitMQ(uri string) (*amqp091.Connection, error) {
+	var last error
+
+	for attempt := 1; attempt <= dialMaxAttempts; attempt++ {
+		con, err := amqp091.Dial(uri)
+		if err == nil {
+			return con, nil
+		}
+
+		last = err
+
+		log.Printf("RabbitMQ dial attempt %d/%d failed: %v",
+			attempt, dialMaxAttempts, err)
+
+		if attempt < dialMaxAttempts {
+			time.Sleep(dialInterval)
+		}
+	}
+
+	return nil, fmt.Errorf("failed to connect to RabbitMQ after %d attempts: %w",
+		dialMaxAttempts, last)
 }
 
 func NewRabbitMQClient() (mq.MQClient, error) {
@@ -217,9 +244,9 @@ func NewRabbitMQClient() (mq.MQClient, error) {
 		return nil, errors.New("RABBITMQ_URL is not set")
 	}
 	
-	con, err := amqp091.Dial(uri)
+	con, err := dialRabbitMQ(uri)
 	if err != nil {
-		return nil, errors.New("Failed to connect to RabbitMQ: " + err.Error())
+		return nil, err
 	}
 
 	ch, err := con.Channel()

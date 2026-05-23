@@ -23,11 +23,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error loading .env.development file: %v", err)
 		}
-	} else {
-		err := godotenv.Load(".env")
-		if err != nil {
-			log.Fatalf("Error loading .env file: %v", err)
-		}
 	}
 
 	// make database connection for workers

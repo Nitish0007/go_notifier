@@ -63,13 +63,14 @@ func (d *CampaignDeliverer) Deliver(ctx context.Context, notificationID, account
 	if err != nil {
 		return err
 	}
-
+	
+	tmpl, err := pongo2.FromString(c.Body)
+	if err != nil {
+		return fmt.Errorf("failed parsing pongo2 template: %w", err)
+	}
+	
 	for _, rcpt := range recipients {
 		// parse the body as a pongo2 template
-		tmpl, err := pongo2.FromString(c.Body)
-		if err != nil {
-			return fmt.Errorf("failed parsing pongo2 template: %w", err)
-		}
 
 		// convert the rcpt to a json string and unmarshal it into a map[string]any
 		tmplContext := map[string]any{
