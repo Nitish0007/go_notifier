@@ -17,11 +17,14 @@ if [ "$argument_env" == "prod" ]; then
   ## set secrets for the cluster in secrets manager
   # gcloud secrets create notifier-secrets --replication-policy="automatic"
   # ================================================================
+  kubectl apply -f deploy/base/namespace.yaml
 
   kubectl create secret generic notifier-secrets --from-env-file=.env -n notifier
 
   # deploy the application
   kubectl apply -k deploy/overlays/gcp
+  kubectl get svc api -n notifier -w
+  kubectl get svc workers -n notifier -w
 
 elif [ "$argument_env" == "local" ]; then
   # create cluster in local
