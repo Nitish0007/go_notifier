@@ -1,0 +1,15 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: notifier
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP
+      - containerPort: 30051
+        hostPort: 50051
+        protocol: TCP
+      - containerPort: 31672
+        hostPort: 15672
+        protocol: TCP
