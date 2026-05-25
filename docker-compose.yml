@@ -43,8 +43,8 @@ services:
       - "15672:15672"
       - "15692:15692"
     environment:
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - ./configs/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
