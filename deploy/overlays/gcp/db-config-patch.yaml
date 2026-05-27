@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notifier-db-config
+  namespace: notifier
+data:
+  DB_HOST: 127.0.0.1
