@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: notifier
 resources:
   - namespace.yaml
+  - db-config.yaml
   - configmap-rabbitmq.yaml
   - postgres.yaml
   - redis.yaml
