@@ -4,6 +4,56 @@ kind: Kustomization
 resources:
   - ../../base
 
+configMapGenerator:
+  - name: notifier-db-config
+    behavior: merge
+    literals:
+      - DB_HOST=127.0.0.1
+
 patches:
   - path: api-loadbalancer.yaml
-  - path: remove-self-hosted-pg.yaml
+
+  - target:
+      kind: Deployment
+      name: api
+      namespace: notifier
+    path: cloudsql-sidecar.yaml
+
+  - target:
+      kind: Deployment
+      name: workers
+      namespace: notifier
+    path: cloudsql-sidecar.yaml
+  
+  - target:
+      kind: Job
+      name: migrate
+      namespace: notifier
+    path: cloudsql-sidecar.yaml
+
+  - patch: |-
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: postgres
+        namespace: notifier
+      $patch: delete
+    target:
+      version: v1
+      kind: Service
+      name: postgres
+      namespace: notifier
+
+  - patch: |-
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: postgres
+        namespace: notifier
+      $patch: delete
+    target:
+      group: apps
+      version: v1
+      kind: StatefulSet
+      name: postgres
+      namespace: notifier

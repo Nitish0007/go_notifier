@@ -1,0 +1,15 @@
+- op: add
+  path: /spec/template/spec/serviceAccountName
+  value: notifier-ksa
+
+- op: add
+  path: /spec/template/spec/containers/-
+  value:
+    name: cloud-sql-proxy
+    image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.18.0
+    args:
+      - "--structured-logs"
+      - "--port=5432"
+      - "project-e16f63f5-6b93-48b8-a01:asia-south2:notifier-db"
+    securityContext:
+      runAsNonRoot: true
