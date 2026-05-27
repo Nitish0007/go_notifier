@@ -16,31 +16,41 @@ spec:
         app.kubernetes.io/part-of: go-notifier
     spec:
       restartPolicy: Never
-      initContainers:
-        - name: wait-for-postgres
-          image: postgres:18-alpine
-          command:
-            - sh
-            - -c
-            - |
-              until pg_isready -h postgres -p 5432 -U postgres; do
-                echo "waiting for postgres..."
-                sleep 2
-              done
+      # initContainers:
+      #   - name: wait-for-postgres
+      #     image: postgres:18-alpine
+      #     command:
+      #       - sh
+      #       - -c
+      #       - |
+      #         until pg_isready -h "${DB_HOST}" -p 5432 -U postgres; do
+      #           echo "waiting for postgres..."
+      #           sleep 2
+      #         done
       containers:
         - name: migrate
           image: ghcr.io/nitish0007/go_notifier-migrate:latest
           imagePullPolicy: IfNotPresent
-          command:
-            - sh
-            - -c
-            - migrate -path /migrations -database "$DB_URL" up
           env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: notifier-db-config
+                  key: DB_HOST
             - name: DB_URL
               valueFrom:
                 secretKeyRef:
                   name: notifier-secrets
                   key: DB_URL
+          command:
+            - sh
+            - -c
+            - |
+              echo "waiting for db proxy..."
+              until nc -z "${DB_HOST}" 5432; do
+                sleep 1
+              done
+            - migrate -path /migrations -database "$DB_URL" up
           resources:
             requests:
               cpu: 50m

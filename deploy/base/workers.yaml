@@ -20,12 +20,18 @@ spec:
       initContainers:
         - name: wait-for-deps
           image: busybox:1.36
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: notifier-db-config
+                  key: DB_HOST
           command:
             - sh
             - -c
             - |
-              until nc -z postgres 5432 && nc -z redis 6379 && nc -z rabbitmq 5672; do
-                echo "waiting for postgres, redis and rabbitmq..."
+              until nc -z redis 6379 && nc -z rabbitmq 5672; do
+                echo "waiting for redis and rabbitmq..."
                 sleep 2
               done
       containers:

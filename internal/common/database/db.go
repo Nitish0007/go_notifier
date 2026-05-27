@@ -34,10 +34,25 @@ type envConfig struct {
 	Production  dbConfig `yaml:"production"`
 }
 
+var Retries int = 1
+var RetryInterval time.Duration = 3 * time.Second
+
 var dbconf dbConfig
 
-// Public methods below
 func Connect(env string) (*gorm.DB, error) {
+	for {
+		db, err := makeConnection(env)
+		if err == nil {
+			return db, nil
+		}
+		Retries++
+		time.Sleep(RetryInterval)
+		log.Printf("Failed to connect to database after %d retries, retrying in %s", Retries, RetryInterval)
+	}
+}
+
+// Public methods below
+func makeConnection(env string) (*gorm.DB, error) {
 	// setDbConfigs(env)
 	dsn := getDSN(env)
 
@@ -207,7 +222,7 @@ func getDSN(env string) string {
 	if dbURL != "" {
 		return dbURL
 	}
-	
+
 	dbconf := getDBConfigs(env)
 	return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=UTC",
 		dbconf.Host,
