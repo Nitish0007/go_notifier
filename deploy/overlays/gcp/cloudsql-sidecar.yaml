@@ -7,9 +7,13 @@
   value:
     name: cloud-sql-proxy
     image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.18.0
+    env:
+      - name: GOOGLE_APPLICATION_CREDENTIALS
+        value: ""
     args:
       - "--structured-logs"
       - "--port=5432"
       - "project-e16f63f5-6b93-48b8-a01:asia-south2:notifier-db"
+      - "--auto-iam-authn"
     securityContext:
       runAsNonRoot: true
