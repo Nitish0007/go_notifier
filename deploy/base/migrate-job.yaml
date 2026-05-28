@@ -42,10 +42,6 @@ spec:
                 secretKeyRef:
                   name: notifier-secrets
                   key: DB_URL
-          args:
-            - "--port=5432"
-            - "project-e16f63f5-6b93-48b8-a01:asia-south2:notifier-db"
-            - "--auto-iam-authn"
           command:
             - sh
             - -c
